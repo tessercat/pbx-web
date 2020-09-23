@@ -1,0 +1,31 @@
+<!DOCTYPE html>{% load static %}
+<html lang="en">
+  <head>
+    {% block title %}{% endblock %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A simple, secure, person-to-person voice and video web calling service.">
+    <link rel="stylesheet" type="text/css" href="{% static 'common/css/picnic.min.css' %}">
+    <link rel="icon" type="image/png" href="{% static 'common/img/favicon.png' %}"/>
+    <link rel="apple-touch-icon" type="image/png" href="{% static 'common/img/touch-icon-152.png' %}">
+    <style type="text/css" media="screen">
+      #main {
+        padding: 3em 0 0;
+      }
+    </style>
+    {% block style %}{% endblock %}
+  </head>
+  <body>
+    <nav id="nav-bar">
+      <a href="/" class="brand" title="Channels directory">
+        <img class="logo" alt="logo" src="{% static 'common/img/favicon.png' %}"/>
+      </a>
+      {% block menu %}{% endblock %}
+    </nav>
+    <main id="main">
+    {% block content %}{% endblock %}
+    {% block footer %}{% endblock %}
+    {% block scripts %}{% endblock %}
+    </main>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+{% extends "common/base.html" %}
+
+{% block title %}
+    <title>About this site</title>
+{% endblock %}
+
+{% block content %}
+      <section style="padding: 1em 2em 4em">
+{{ view.about|safe }}
+      </section>
+{% endblock %}

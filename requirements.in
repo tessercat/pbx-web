@@ -1,0 +1,6 @@
+Django
+daphne
+httpx
+channels
+django-prometheus
+markdown

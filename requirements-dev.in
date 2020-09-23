@@ -1,0 +1,9 @@
+Django
+daphne
+httpx
+channels
+django-prometheus
+markdown
+flake8
+pylint
+pylint-django

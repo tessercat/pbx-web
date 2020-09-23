@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="freeswitch/xml">
+  <section name="configuration">
+    <configuration name="verto.conf" description="HTML5 Verto Endpoint">
+      <settings>
+        <param name="debug" value="{{ debug_level }}"/>
+        <param name="enable-fs-events" value="false"/>
+        <!-- <param name="enable-presence" value="true"/> -->
+        <!-- <param name="detach-timeout-sec" value="120"/> -->
+      </settings>
+      <profiles>
+        <profile name="verto4">
+          <param name="secure-combined" value="$${certs_dir}/wss.pem"/>
+          <param name="bind-local" value="127.0.0.1:{{ verto_port }}"/>
+          <param name="force-register-domain" value="{{ directory_domain }}"/>
+          <param name="userauth" value="true"/>
+          <param name="blind-reg" value="false"/>
+          <param name="context" value="{{ dialplan_context }}"/>
+        </profile>
+        <profile name="verto6">
+          <param name="secure-combined" value="$${certs_dir}/wss.pem"/>
+          <param name="bind-local" value="[::1]:{{ verto_port }}"/>
+          <param name="force-register-domain" value="{{ directory_domain }}"/>
+          <param name="userauth" value="true"/>
+          <param name="blind-reg" value="false"/>
+          <param name="context" value="{{ dialplan_context }}"/>
+        </profile>
+      </profiles>
+    </configuration>
+  </section>
+</document>

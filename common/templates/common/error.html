@@ -1,0 +1,20 @@
+{% extends "common/base.html" %}
+{% block title %}
+    <title>{{ title }}</title>
+{% endblock %}
+
+{% block style %}
+    <style type="text/css" media="screen">
+      .message {
+        text-align: center;
+        padding-top: 2em;
+        padding-bottom: 4em;
+      }
+    </style>
+{% endblock %}
+
+{% block content %}
+      <section>
+        <p class="message">{{ message }}</p>
+      </section>
+{% endblock %}
