@@ -596,16 +596,19 @@ class Connection {
     this.isPolite = null;
     this.userMedia = null;
     this.pc = null;
-    this.statsInterval = 10000;
     this.makingOffer = false;
     this.ignoreOffer = false;
+    this.onTrack = () => {};
+    this.onSdp = () => {};
+    this.onCandidate = () => {};
+    this.onIceError = () => {};
   }
 
   isConnectedTo(clientId) {
-    if (clientId) {
+    if (clientId && this.clientId) {
       return clientId === this.clientId;
     }
-    return this.clientId !== null;
+    return false;
   }
 
   isIdle() {
@@ -619,22 +622,18 @@ class Connection {
       iceServers: [{urls: `stun:${stunServer}`}],
     }
     this.pc = new RTCPeerConnection(configuration);
-  }
-
-  open(trackHandler, candidateHandler, sdpHandler, iceHandler) {
     this.pc.ontrack = (event) => {
       if (event.track) {
         _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].info('Added remote', event.track.kind, 'track');
-        trackHandler(event.track);
+        this.onTrack(event.track);
       }
     };
     this.pc.onicecandidate = (event) => {
       if (event.candidate) {
-        candidateHandler(event.candidate.toJSON());
+        this.onCandidate(event.candidate.toJSON());
       } else {
         if (this.pc.connectionState === 'failed') {
-          _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].error('ICE failed');
-          iceHandler();
+          this.onIceError();
         }
       }
     };
@@ -648,7 +647,7 @@ class Connection {
         }
         await this.pc.setLocalDescription(offer);
         if (this.pc.localDescription) {
-          sdpHandler(this.pc.localDescription.toJSON());
+          this.onSdp(this.pc.localDescription.toJSON());
         }
       } catch (error) {
         _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].error('SDP negotiation error', error);
@@ -656,6 +655,9 @@ class Connection {
         this.makingOffer = false;
       }
     };
+  }
+
+  open() {
     _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].info('Connecting');
     for (const track of this.userMedia.getTracks()) {
       this.pc.addTrack(track, this.userMedia);
@@ -725,18 +727,18 @@ class Connection {
       let hasVideo = false;
       for (const device of devices) {
         if (device.kind.startsWith('audio')) {
-          _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].info('Found local audio device');
+          _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].info('Found audio device');
           hasAudio = true;
         } else if (device.kind.startsWith('video')) {
-          _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].info('Found local video device');
+          _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].info('Found video device');
           hasVideo = true;
         }
       }
       if (audio && !hasAudio) {
-        throw new Error('No audio devices found.');
+        throw new Error('No audio devices.');
       }
       if (video && !hasVideo) {
-        throw new Error('No video devices found.');
+        throw new Error('No video devices.');
       }
       return navigator.mediaDevices.getUserMedia({audio, video});
     }).then(stream => {
@@ -748,10 +750,9 @@ class Connection {
 
   // Inbound signal handlers.
 
-  async addCandidate(jsonCandidate, iceHandler) {
+  async addCandidate(jsonCandidate) {
     if (this.pc.connectionState === 'failed') {
-      _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].error('ICE failed');
-      iceHandler();
+      this.onIceError();
     } else {
       try {
         await this.pc.addIceCandidate(jsonCandidate);
@@ -870,7 +871,7 @@ if (webrtc_adapter__WEBPACK_IMPORTED_MODULE_0___default.a.browserDetails.browser
 } else {
   window.addEventListener('load', function () {
     document.debugLogEnabled = false;
-    document.clientLogEnabled = false;
+    document.clientLogEnabled = true;
     document.infoLogEnabled = true;
     document.peer = new _peer_js__WEBPACK_IMPORTED_MODULE_1__["default"]();
     document.peer.connect();
@@ -1161,7 +1162,7 @@ class OffersDialog {
     acceptButton.style.float = 'right';
     acceptButton.style.marginLeft = '0.2em';
     acceptButton.addEventListener('click', () => {
-      this.onAccept(clientId);
+      this.onAccept(clientId, this.offers[clientId].peerName);
     });
     section.append(acceptButton);
     const ignoreButton = document.createElement('button');
@@ -1307,6 +1308,8 @@ class Peer {
     this.client.onMessage = this._onMessage.bind(this);
 
     // Nav menu items
+    this.nameButton = this._nameButton();
+    this.connectionLabel = this._connectionLabel();
     this.onlineLabel = this._onlineLabel();
     this.offlineLabel = this._offlineLabel();
     this.view.setNavMenu(this.offlineLabel);
@@ -1314,7 +1317,6 @@ class Peer {
     // NameDialog
     this.peerId = null;
     this.peerName = null;
-    this.nameButton = this._nameButton();
     this.nameDialog = new _name_dialog_js__WEBPACK_IMPORTED_MODULE_2__["default"](
       this.view.modalHeader('Enter your name')
     )
@@ -1357,13 +1359,21 @@ class Peer {
     const button = document.createElement('button');
     button.classList.add('pseudo');
     window.matchMedia(`(min-width: 480px)`).addListener(() => {
-      this._setButtonName();
+      this._updateNameButton();
     });
     button.addEventListener('click', () => {
-      this._initNameDialog();
-      this.view.showModal(this.nameDialog);
+      this._showNameDialog();
     });
     return button;
+  }
+
+  _connectionLabel() {
+    const label = document.createElement('label');
+    label.classList.add('pseudo', 'button');
+    window.matchMedia(`(min-width: 480px)`).addListener(() => {
+      this._updateConnectionLabel();
+    });
+    return label;
   }
 
   _offlineLabel() {
@@ -1380,7 +1390,7 @@ class Peer {
     return label;
   }
 
-  _closeButton(clientId) {
+  _closeConnectionButton(clientId) {
     const button = document.createElement('button');
     button.textContent = 'Close';
     button.classList.add('pseudo');
@@ -1398,7 +1408,7 @@ class Peer {
     return button;
   }
 
-  // Display name utilities.
+  // Dialog, callback and message handler utilities/helpers.
 
   _displayName(clientId, peerName, clipWidth) {
     if (peerName && window.innerWidth < clipWidth) {
@@ -1417,7 +1427,7 @@ class Peer {
     return clientId.substr(0, 5);
   }
 
-  _setButtonName() {
+  _updateNameButton() {
     this.nameButton.textContent = this._displayName(
       this.client.clientId, this.peerName, 480
     );
@@ -1430,16 +1440,91 @@ class Peer {
     }
   }
 
-  // NameDialog callbacks.
-
-  _initNameDialog() {
-    this.nameDialog.init(this.peerId, this.peerName);
+  _updateConnectionLabel() {
+    if (!this.connection.isIdle()) {
+      this.connectionLabel.textContent = this._displayName(
+        this.connectionLabel.clientId, this.connectionLabel.peerName, 480
+      );
+      if (this.connectionLabel.peerName) {
+        this.connectionLabel.setAttribute(
+          'title',
+          `${this.connectionLabel.peerName} (${this.connectionLabel.peerId})`
+        );
+      } else {
+        this.connectionLabel.removeAttribute('title');
+      }
+    }
   }
+
+  _showNameDialog() {
+    this.nameDialog.init(this.peerId, this.peerName);
+    this.view.showModal(this.nameDialog);
+  }
+
+  _subscribe() {
+    const onSuccess = () => {
+      this.client.publish({
+        peerStatus: STATUS.ready,
+        peerName: this.peerName
+      });
+    };
+    const onError = () => {
+      this.view.showAlert('Subscription error');
+    }
+    this.client.subscribe(onSuccess, onError);
+  }
+
+  _openConnection(clientId, peerName) {
+    if (this.connection.isConnectedTo(clientId)) {
+      this.connection.onTrack = (track) => {
+        this.view.addTrack(track);
+      };
+      this.connection.onSdp = (sdp) => {
+        this.client.sendMessage(clientId, sdp);
+        _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].info('Sent SDP');
+      };
+      this.connection.onCandidate = (candidate) => {
+        this.client.sendMessage(clientId, candidate);
+        _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].info('Sent candidate');
+      };
+      this.connection.onIceError = () => {
+        _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].error('ICE failed');
+        this.client.sendMessage(clientId, {peerAction: MESSAGES.error});
+        this._closeConnection();
+        this.view.showAlert('ICE failed. Can\'t connect.');
+        this.view.showModal(this.offersDialog);
+        this.client.publish({
+          peerStatus: STATUS.available,
+          peerName: this.peerName
+        });
+      };
+      this.connectionLabel.clientId = clientId;
+      this.connectionLabel.peerName = peerName;
+      this.connectionLabel.peerId = this._displayName(clientId);
+      this._updateConnectionLabel();
+      this.view.setNavStatus(this.connectionLabel);
+      this.view.setNavMenu(this._closeConnectionButton(clientId));
+      this.connection.open();
+    }
+  }
+
+  _closeConnection() {
+    this.view.hidePlayer();
+    this.connection.close();
+    this.view.setNavStatus(this.nameButton);
+    this.view.setNavMenu(this.onlineLabel);
+  }
+
+  _hasOffers() {
+    return Object.keys(this.offersDialog.offers).length > 0;
+  }
+
+  // NameDialog callbacks.
 
   _onSubmitName(peerName) {
     this.view.hideModal(this.nameDialog);
     this.peerName = peerName; // Validation in modal.
-    this._setButtonName();
+    this._updateNameButton();
     const changed = this.client.setSessionData('peerName', peerName);
     if (changed && this.client.isSubscribed && this.connection.isIdle()) {
       this.client.publish({
@@ -1494,18 +1579,13 @@ class Peer {
     this.offerDialog.setClosed();
     this.view.hideModal(this.offerDialog);
     this.connection.close();
-    this.client.publish({
-      peerStatus: STATUS.available,
-      peerName: this.peerName
-    });
+    this.client.publish(
+      {peerStatus: STATUS.available, peerName: this.peerName}
+    );
     this.view.showModal(this.offersDialog);
   }
 
   // OffersDialog callbacks.
-
-  _hasOffers() {
-    return Object.keys(this.offersDialog.offers).length > 0;
-  }
 
   _onIgnoreOffer(clientId) {
     this.offersDialog.removeOffer(clientId);
@@ -1515,20 +1595,21 @@ class Peer {
     }
   }
 
-  _onAcceptOffer(clientId) {
+  _onAcceptOffer(clientId, peerName) {
     const onSuccess = () => {
-      this.client.sendMessage(clientId, {peerAction: MESSAGES.accept});
+      this.client.sendMessage(
+        clientId, {peerAction: MESSAGES.accept, peerName: this.peerName}
+      );
       this.client.publish({peerStatus: STATUS.unavailable});
-      this._openConnection(clientId);
+      this._openConnection(clientId, peerName);
       this.offersDialog.removeOffer(clientId);
     };
     const onError = (error) => {
       _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].info('Error accepting offer', clientId, error.message);
       this.client.sendMessage(clientId, {peerAction: MESSAGES.error});
+      this._closeConnection();
       this.view.showAlert(error.message);
       this.view.showModal(this.offersDialog);
-      this.view.hidePlayer();
-      this.connection.close();
       this.offersDialog.removeOffer(clientId);
     };
     if (this.connection.isIdle()) {
@@ -1540,46 +1621,7 @@ class Peer {
     }
   }
 
-  // Connection negotiation button and message event handers.
-
-  _openConnection(clientId) {
-    if (this.connection.isConnectedTo(clientId)) {
-      const trackHandler = (track) => {
-        this.view.addTrack(track);
-      };
-      const candidateHandler = (candidate) => {
-        this.client.sendMessage(clientId, candidate);
-        _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].info('Sent candidate');
-      };
-      const offerHandler = (sdp) => {
-        this.client.sendMessage(clientId, sdp);
-        _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].info('Sent SDP');
-      };
-      const iceHandler = () => {
-        this.client.sendMessage(clientId, {peerAction: MESSAGES.error});
-        this.view.hidePlayer();
-        this.connection.close();
-        this.view.showAlert('ICE failed. Can\'t connect.');
-        this.view.showModal(this.offersDialog);
-        this.client.publish({
-          peerStatus: STATUS.available,
-          peerName: this.peerName
-        });
-      };
-      this.view.setNavMenu(this._closeButton(clientId));
-      this.connection.open(
-        trackHandler, candidateHandler, offerHandler, iceHandler
-      );
-    }
-  }
-
-  _closeConnection() {
-    this.view.hidePlayer();
-    this.connection.close();
-    this.view.setNavMenu(this.onlineLabel);
-  }
-
-  // Client join/login/message handlers.
+  // Client callbacks.
 
   _onConnect() {
     this.peersPanel.setOnline();
@@ -1615,28 +1657,14 @@ class Peer {
     this.view.showAlert(`Login failed. ${message}.`);
   }
 
-  _subscribe() {
-    const onSuccess = () => {
-      this.client.publish({
-        peerStatus: STATUS.ready,
-        peerName: this.peerName
-      });
-    };
-    const onError = () => {
-      this.view.showAlert('Subscription error');
-    }
-    this.client.subscribe(onSuccess, onError);
-  }
-
   _onReady() {
     this.peerName = this.client.getSessionData('peerName');
-    this._setButtonName();
+    this._updateNameButton();
     this.view.setNavStatus(this.nameButton);
     if (this.client.getSessionData('peerName')) {
       this._subscribe();
     } else {
-      this._initNameDialog();
-      this.view.showModal(this.nameDialog);
+      this._showNameDialog();
     }
   }
 
@@ -1684,7 +1712,7 @@ class Peer {
     if (eventData.peerAction === MESSAGES.offer) {
       this._handleOffer(clientId, eventData.peerName);
     } else if (eventData.peerAction === MESSAGES.accept) {
-      this._handleAccept(clientId);
+      this._handleAccept(clientId, eventData.peerName);
     } else if (eventData.peerAction === MESSAGES.close) {
       this._handleClose(clientId);
     } else if (eventData.peerAction === MESSAGES.error) {
@@ -1708,7 +1736,7 @@ class Peer {
     );
   }
 
-  // Peer-specific signal layer message/event handlers.
+  // Client message/event handlers.
 
   _handleOffer(clientId, peerName) {
     if (!peerName || !this.nameDialog.isValid(peerName)) {
@@ -1720,12 +1748,15 @@ class Peer {
     }
   }
 
-  _handleAccept(clientId) {
+  _handleAccept(clientId, peerName) {
     if (this.connection.isConnectedTo(clientId)) {
+      if (!peerName || !this.nameDialog.isValid(peerName)) {
+        peerName = '';
+      }
       this.view.showPlayer();
       this.offerDialog.setClosed();
       this.view.hideModal(this.offerDialog);
-      this._openConnection(clientId);
+      this._openConnection(clientId, peerName);
     }
   }
 
@@ -1747,8 +1778,15 @@ class Peer {
   }
 
   _handleError(clientId) {
-    if (this.offerDialog.isOfferTo(clientId)) {
-      this.offerDialog.setClosed('The other peer failed to connect.');
+    if (this.connection.isConnectedTo(clientId)) {
+      this._closeConnection();
+      this.client.publish({
+        peerStatus: STATUS.available,
+        peerName: this.peerName
+      });
+      this.offerDialog.setClosed();
+      this.view.showAlert('The other peer failed to connect.');
+      this.view.showModal(this.offersDialog);
     }
   }
 
@@ -1787,7 +1825,7 @@ class Peer {
       this.offerDialog.setClosed('The other peer left the channel.');
     }
     if (this.connection.isConnectedTo(clientId)) {
-      this._closeConnection(clientId);
+      this._closeConnection();
     }
     this.peersPanel.removePeer(clientId);
     this.offersDialog.removeOffer(clientId);
@@ -1799,18 +1837,9 @@ class Peer {
   _handleCandidate(clientId, candidate) {
     if (this.connection.isConnectedTo(clientId)) {
       _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].info('Received candidate');
-      const iceHandler = () => {
-        this.view.showAlert('ICE failed. Can\'t connect.');
-        this._closeConnection();
-        this.client.sendMessage(clientId, {peerAction: MESSAGES.error});
-        this.client.publish({
-          peerStatus: STATUS.available,
-          peerName: this.peerName
-        });
-      };
-      this.connection.addCandidate(candidate, iceHandler).then(() => {
+      this.connection.addCandidate(candidate).then(() => {
       }).catch(error => {
-        _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].error('Error addng candidate', error);
+        _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].error('Error adding candidate', error);
       });
     }
   }
