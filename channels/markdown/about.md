@@ -4,28 +4,6 @@ It's a person-to-person
 voice and video
 web chat service.
 
-The service
-is organized by channel.
-Channel members
-see ID and status
-of other members
-and can request
-a peer-to-peer voice and video call
-with any other available member.
-
-The service
-is free to use,
-and it's fairly private.
-The call server
-hosts the web client
-and relays member status
-and call-control messages
-between peers.
-Once calls are established,
-voice and video
-are "end-to-end encrypted"
-and stream directly between peers.
-
 Use this service at your own risk,
 with no warranty of any kind,
 express or implied.
@@ -50,12 +28,15 @@ Check volume levels.
 
 Poor wireless is often the cause of poor quality calls.
 
-Connections fail
-when a peer requires
-[TURN](https://webrtc.org/getting-started/turn-server "TURN server").
+Connections fail when 
+[ICE](https://webrtc.org/getting-started/peer-connections#ice_candidates "ICE candidates")
+fails.
+Use a VPN
+when connecting
+from restrictive networks.
 
 Otherwise,
 the service should work between
-Firefox and Chrome-based browsers
+Firefox and Chromium-based browsers
 on Android, Windows and Linux.
-It hasn't been tested on Apple products.
+It hasn't been tested on appleOS.
