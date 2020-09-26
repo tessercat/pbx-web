@@ -113,11 +113,11 @@ const CONST = {
 }
 
 class VertoRequest {
-  constructor(method, params, sessid, requestId) {
+  constructor(sessionId, requestId, method, params) {
     this.jsonrpc = '2.0';
-    this.method = method;
-    this.params = {sessid, ...params};
     this.id = requestId;
+    this.method = method;
+    this.params = {sessid: sessionId, ...params};
   }
 }
 
@@ -134,7 +134,9 @@ class Client {
   constructor() {
     this.channelId = location.pathname.split('/').pop();
     this.ws = new _websocket_js__WEBPACK_IMPORTED_MODULE_0__["default"]();
-    this._setWsListeners();
+    this.ws.onConnect = this._onWsConnect.bind(this);
+    this.ws.onDisconnect = this._onWsDisconnect.bind(this);
+    this.ws.onMessage = this._onWsMessage.bind(this);
     this.pingTimer = null;
     this.lastActive = null;
     this._addActivityListeners();
@@ -166,11 +168,11 @@ class Client {
     if (value && value !== this.sessionData[key]) {
       changed = true;
       this.sessionData[key] = value;
-      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].info('Set session', key);
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].info('Set', key);
     } else if (this.sessionData[key] && !value) {
       changed = true;
       delete this.sessionData[key];
-      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].info('Deleted session', key);
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].info('Deleted', key);
     }
     if (changed) {
       localStorage.setItem(
@@ -270,13 +272,7 @@ class Client {
 
   // Websocket event handlers.
 
-  _setWsListeners() {
-    this.ws.onConnect = this._wsConnectHandler.bind(this);
-    this.ws.onDisconnect = this._wsDisconnectHandler.bind(this);
-    this.ws.onMessage = this._wsMessageHandler.bind(this);
-  }
-
-  _wsConnectHandler() {
+  _onWsConnect() {
     _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].info('Connected');
     this.onConnect();
     this._cleanResponseCallbacks();
@@ -289,7 +285,7 @@ class Client {
     this._sendRequest('login');
   }
 
-  _wsDisconnectHandler() {
+  _onWsDisconnect() {
     this.isSubscribed = false;
     clearTimeout(this.pingTimer);
     const isTimeout = this._isTimeout();
@@ -301,18 +297,18 @@ class Client {
     _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].info('Disconnected');
   }
 
-  _wsMessageHandler(event) {
+  _onWsMessage(event) {
     const message = this._parse(event.data);
     if (this.responseCallbacks[message.id]) {
       _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('Raw response', message);
-      this._responseHandler(message);
+      this._handleResponse(message);
     } else {
       _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('Raw event', message);
-      this._eventHandler(message);
+      this._handleEvent(message);
     }
   }
 
-  // Connection and verto session maintenance methods.
+  // Connection and session maintenance methods.
 
   _initSessionData() {
     return this.sessionData = JSON.parse(
@@ -332,8 +328,8 @@ class Client {
   }
 
   _startSession(onSuccess, onError) {
-    let sessionId = this._getSessionId();
-    let url = `${location.href}/sessions?sessionId=${sessionId}`;
+    const sessionId = this._getSessionId();
+    const url = `${location.href}/sessions?sessionId=${sessionId}`;
     fetch(url).then(response => {
       if (response.ok) {
         return response.json();
@@ -344,8 +340,8 @@ class Client {
       onSuccess(sessionId, loginData);
     }).catch(error => {
       if (error.message === '404') {
-        let sessionId = this._getSessionId(true);
-        let url = `${location.href}/sessions?sessionId=${sessionId}`;
+        const sessionId = this._getSessionId(true);
+        const url = `${location.href}/sessions?sessionId=${sessionId}`;
         fetch(url).then(response => {
           if (response.ok) {
             return response.json();
@@ -382,10 +378,10 @@ class Client {
   _sendRequest(method, params, onSuccess, onError) {
     this.currentRequestId += 1;
     const request = new VertoRequest(
-      method,
-      params,
       this.sessionId,
-      this.currentRequestId
+      this.currentRequestId,
+      method,
+      params
     );
     this.responseCallbacks[request.id] = new ResponseCallbacks(
       onSuccess, onError
@@ -462,7 +458,7 @@ class Client {
 
   // Verto JSON-RPC response and event handlers.
 
-  _responseHandler(message) {
+  _handleResponse(message) {
     if (message.result) {
       const onSuccess = this.responseCallbacks[message.id].onSuccess;
       if (onSuccess) {
@@ -486,7 +482,7 @@ class Client {
     delete this.responseCallbacks[message.id];
   }
 
-  _eventHandler(event) {
+  _handleEvent(event) {
     if (event.method === 'verto.clientReady') {
       _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].info('Ready');
       this.onReady();
@@ -519,7 +515,7 @@ class Client {
   // Event and message data processing helpers.
 
   /*
-   * These methods eat exceptions.
+   * These methods eat exceptions. That's the point.
    *
    * Parsing takes a stringified object as input and returns the object,
    * or null on error.
@@ -871,7 +867,7 @@ if (webrtc_adapter__WEBPACK_IMPORTED_MODULE_0___default.a.browserDetails.browser
 } else {
   window.addEventListener('load', function () {
     document.debugLogEnabled = false;
-    document.clientLogEnabled = true;
+    document.clientLogEnabled = false;
     document.infoLogEnabled = true;
     document.peer = new _peer_js__WEBPACK_IMPORTED_MODULE_1__["default"]();
     document.peer.connect();
@@ -906,24 +902,41 @@ __webpack_require__.r(__webpack_exports__);
  * Copyright (c) 2020 Peter Christensen. All Rights Reserved.
  * CC BY-NC-ND 4.0.
  */
-//import logger from '../logger.js';
-
 class NameDialog {
 
   constructor(header) {
-    this.header = header;
+    this.peerId = null;
     this.section = this._section();
     this.footer = this._footer();
-    this.modalContent = [this.header, this.section, this.footer];
+    this.modalContent = [header, this.section, this.footer];
     this.nameField = this.section.querySelector('#name-input');
     this.okButton = this.footer.querySelector('#name-ok');
     this.nameFieldValidator = new RegExp('^[a-zA-Z0-9]+( [a-zA-Z0-9]+)*$');
     this._addListeners();
-    this.peerId = null;
     this.onSubmit = () => {};
     this.onClose = () => {};
   }
 
+  setClientId(clientId) {
+    this.peerId = clientId.substr(0, 5);
+  }
+
+  init(peerName) {
+    this.nameField.value = peerName ? peerName : this.peerId;
+    this.nameField.setCustomValidity('');
+  }
+
+  isValid(peerName) {
+    if (this.nameFieldValidator.test(peerName) && peerName.length <= 32) {
+      return true;
+    }
+    return false;
+  }
+
+  setFocus() {
+    this.nameField.focus();
+    this.nameField.select();
+  }
   _section() {
     const input = document.createElement('input');
     input.setAttribute('type', 'text');
@@ -985,23 +998,169 @@ class NameDialog {
       this.onSubmit(this.nameField.value);
     }
   }
+}
 
-  init(peerId, peerName) {
-    this.peerId = peerId;
-    this.nameField.value = peerName ? peerName : peerId;
-    this.nameField.setCustomValidity('');
+
+/***/ }),
+
+/***/ "./src/peer/nav-menu.js":
+/*!******************************!*\
+  !*** ./src/peer/nav-menu.js ***!
+  \******************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return NavMenu; });
+/*
+ * Copyright (c) 2020 Peter Christensen. All Rights Reserved.
+ * CC BY-NC-ND 4.0.
+ */
+class NavMenu {
+
+  constructor() {
+    this.offlineLabel = this._offlineLabel();
+    this.onlineLabel = this._onlineLabel();
+    this.closeButton = this._closeButton();
+    this.menu = null;
+    this.onCloseEvent = () => {};
   }
 
-  isValid(peerName) {
-    if (this.nameFieldValidator.test(peerName) && peerName.length <= 32) {
-      return true;
+  setOffline() {
+    this.menu = this.offlineLabel;
+  }
+
+  setOnline() {
+    this.menu = this.onlineLabel;
+  }
+
+  setConnected(clientId) {
+    this.closeButton.clientId = clientId;
+    this.menu = this.closeButton;
+  }
+
+  _offlineLabel() {
+    const label = document.createElement('label');
+    label.textContent = 'Offline';
+    label.classList.add('pseudo', 'button');
+    return label;
+  }
+
+  _onlineLabel() {
+    const label = document.createElement('label');
+    label.textContent = 'Online';
+    label.classList.add('pseudo', 'button');
+    return label;
+  }
+
+  _closeButton() {
+    const button = document.createElement('button');
+    button.textContent = 'Close';
+    button.classList.add('pseudo');
+    button.setAttribute('title', 'Close the connection');
+    button.addEventListener('click', () => {
+      this.onCloseEvent(this.closeButton.clientId);
+    });
+    return button;
+  }
+}
+
+
+/***/ }),
+
+/***/ "./src/peer/nav-status.js":
+/*!********************************!*\
+  !*** ./src/peer/nav-status.js ***!
+  \********************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return NavStatus; });
+/*
+ * Copyright (c) 2020 Peter Christensen. All Rights Reserved.
+ * CC BY-NC-ND 4.0.
+ */
+class NavStatus {
+
+  constructor() {
+    this.nameButton = this._nameButton();
+    this.peerLabel = this._peerLabel();
+    this.menu = null;
+    this.onRenameEvent = () => {};
+    this.getDisplayName = () => {'N/A'};
+  }
+
+  setClientId(clientId) {
+    this.nameButton.peerId = clientId.substr(0, 5);
+    this._initNameButton();
+  }
+
+  setPeerName(peerName) {
+    this.nameButton.peerName = peerName;
+    this._initNameButton();
+  }
+
+  setIdle() {
+    this.menu = this.nameButton;
+  }
+
+  setConnected(clientId, peerName) {
+    this.peerLabel.peerId = clientId.substr(0, 5);
+    this.peerLabel.peerName = peerName;
+    this._initPeerLabel();
+    this.menu = this.peerLabel;
+  }
+
+  _nameButton() {
+    const button = document.createElement('button');
+    button.classList.add('pseudo');
+    window.matchMedia(`(min-width: 480px)`).addListener(() => {
+      this._initNameButton();
+    });
+    button.addEventListener('click', () => {
+      this.onRenameEvent();
+    });
+    return button;
+  }
+
+  _initNameButton() {
+    if (this.nameButton.peerName) {
+      this.nameButton.textContent = this.getDisplayName(
+        this.nameButton.peerName, 480
+      );
+      this.nameButton.setAttribute(
+        'title', `${this.nameButton.peerName} (${this.nameButton.peerId})`
+      );
+    } else {
+      this.nameButton.textContent = this.nameButton.peerId;
+      this.nameButton.setAttribute('title', 'Click to change your name');
     }
-    return false;
   }
 
-  setFocus() {
-    this.nameField.focus();
-    this.nameField.select();
+  _peerLabel() {
+    const label = document.createElement('label');
+    label.classList.add('pseudo', 'button');
+    window.matchMedia(`(min-width: 480px)`).addListener(() => {
+      this._initPeerLabel();
+    });
+    return label;
+  }
+
+  _initPeerLabel() {
+    if (this.peerLabel.peerName) {
+      this.peerLabel.textContent = this.getDisplayName(
+        this.peerLabel.peerName, 480
+      );
+      this.peerLabel.setAttribute(
+        'title', `${this.peerLabel.peerName} (${this.peerLabel.peerId})`
+      );
+    } else {
+      this.peerLabel.textContent = this.peerLabel.peerId;
+      this.peerLabel.removeAttribute('title');
+    }
   }
 }
 
@@ -1104,33 +1263,41 @@ class OffersDialog {
     this.modalContent = [this.header, this.panel, this.footer];
     this.offers = {};
     this.ignored = {};
+    this._setMatchMedia();
     this.onAccept = () => {};
     this.onIgnore = () => {};
-    this.displayName = () => {return 'N/A'};
+    this.getDisplayName = () => {return 'N/A'};
+  }
+
+  _setMatchMedia() {
+    matchMedia('(min-width: 480px)').addListener(() => {
+      for (const clientId in this.offers) {
+        this._setPeerName(this.offers[clientId]);
+      }
+    });
   }
 
   _setPeerName(offer) {
-    offer.label.textContent = this.displayName(
-      offer.clientId, offer.peerName, 480
-    );
     if (offer.peerName) {
+      offer.label.textContent = this.getDisplayName(offer.peerName, 480);
+      offer.label.setAttribute(
+        'title', `${offer.peerName} (${offer.peerId})`
+      );
       offer.ignoreButton.setAttribute(
         'title', `Ignore offer from ${offer.peerName} (${offer.peerId})`
       );
       offer.acceptButton.setAttribute(
         'title', `Accept offer from ${offer.peerName} (${offer.peerId})`
       );
-      offer.label.setAttribute(
-        'title', `${offer.peerName} (${offer.peerId})`
-      );
     } else {
+      offer.label.textContent = this.getDisplayName(offer.peerId);
+      offer.label.removeAttribute('title');
       offer.ignoreButton.setAttribute(
         'title', `Ignore offer from ${offer.peerId}`
       );
       offer.acceptButton.setAttribute(
         'title', `Accept offer from ${offer.peerId}`
       );
-      offer.label.removeAttribute('title');
     }
   }
 
@@ -1176,8 +1343,8 @@ class OffersDialog {
     section.append(ignoreButton);
     offer.added = new Date();
     offer.clientId = clientId;
+    offer.peerId = clientId.substr(0, 5);
     offer.peerName = peerName;
-    offer.peerId = this.displayName(clientId);
     offer.ignoreButton = ignoreButton;
     offer.acceptButton = acceptButton;
     offer.label = label;
@@ -1252,16 +1419,20 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Peer; });
 /* harmony import */ var _client_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../client.js */ "./src/client.js");
 /* harmony import */ var _connection_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../connection.js */ "./src/connection.js");
-/* harmony import */ var _name_dialog_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./name-dialog.js */ "./src/peer/name-dialog.js");
-/* harmony import */ var _peers_panel_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./peers-panel.js */ "./src/peer/peers-panel.js");
-/* harmony import */ var _offers_dialog_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./offers-dialog.js */ "./src/peer/offers-dialog.js");
-/* harmony import */ var _offer_dialog_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./offer-dialog.js */ "./src/peer/offer-dialog.js");
-/* harmony import */ var _view_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../view.js */ "./src/view.js");
-/* harmony import */ var _logger_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../logger.js */ "./src/logger.js");
+/* harmony import */ var _nav_status_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./nav-status.js */ "./src/peer/nav-status.js");
+/* harmony import */ var _nav_menu_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./nav-menu.js */ "./src/peer/nav-menu.js");
+/* harmony import */ var _name_dialog_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./name-dialog.js */ "./src/peer/name-dialog.js");
+/* harmony import */ var _peers_panel_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./peers-panel.js */ "./src/peer/peers-panel.js");
+/* harmony import */ var _offers_dialog_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./offers-dialog.js */ "./src/peer/offers-dialog.js");
+/* harmony import */ var _offer_dialog_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./offer-dialog.js */ "./src/peer/offer-dialog.js");
+/* harmony import */ var _view_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../view.js */ "./src/view.js");
+/* harmony import */ var _logger_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../logger.js */ "./src/logger.js");
 /*
  * Copyright (c) 2020 Peter Christensen. All Rights Reserved.
  * CC BY-NC-ND 4.0.
  */
+
+
 
 
 
@@ -1289,12 +1460,6 @@ class Peer {
 
   constructor() {
 
-    // View and nav menu
-    this.view = new _view_js__WEBPACK_IMPORTED_MODULE_6__["default"]();
-
-    // Connection
-    this.connection = new _connection_js__WEBPACK_IMPORTED_MODULE_1__["default"]();
-
     // Client
     this.client = new _client_js__WEBPACK_IMPORTED_MODULE_0__["default"]();
     this.client.onConnect = this._onConnect.bind(this);
@@ -1307,17 +1472,26 @@ class Peer {
     this.client.onEvent = this._onEvent.bind(this);
     this.client.onMessage = this._onMessage.bind(this);
 
-    // Nav menu items
-    this.nameButton = this._nameButton();
-    this.connectionLabel = this._connectionLabel();
-    this.onlineLabel = this._onlineLabel();
-    this.offlineLabel = this._offlineLabel();
-    this.view.setNavMenu(this.offlineLabel);
+    // Connection
+    this.connection = new _connection_js__WEBPACK_IMPORTED_MODULE_1__["default"]();
+
+    // View
+    this.view = new _view_js__WEBPACK_IMPORTED_MODULE_8__["default"]();
+
+    // Nav status
+    this.navStatus = new _nav_status_js__WEBPACK_IMPORTED_MODULE_2__["default"]();
+    this.navStatus.getDisplayName = this._getDisplayName;
+    this.navStatus.onRenameEvent = this._rename.bind(this);
+
+    // Nav menu
+    this.navMenu = new _nav_menu_js__WEBPACK_IMPORTED_MODULE_3__["default"]();
+    this.navMenu.setOffline();
+    this.navMenu.onCloseEvent = this._onCloseEvent.bind(this);
+    this.view.setNavMenu(this.navMenu.menu);
 
     // NameDialog
-    this.peerId = null;
     this.peerName = null;
-    this.nameDialog = new _name_dialog_js__WEBPACK_IMPORTED_MODULE_2__["default"](
+    this.nameDialog = new _name_dialog_js__WEBPACK_IMPORTED_MODULE_4__["default"](
       this.view.modalHeader('Enter your name')
     )
     this.nameDialog.onSubmit = this._onSubmitName.bind(this);
@@ -1325,21 +1499,21 @@ class Peer {
     this.nameDialog.onModalEscape = this._onCancelName.bind(this);
 
     // PeersPanel
-    this.peersPanel = new _peers_panel_js__WEBPACK_IMPORTED_MODULE_3__["default"]();
-    this.peersPanel.displayName = this._displayName;
+    this.peersPanel = new _peers_panel_js__WEBPACK_IMPORTED_MODULE_5__["default"]();
+    this.peersPanel.getDisplayName = this._getDisplayName;
     this.peersPanel.onOffer = this._onOffer.bind(this);
-    this.view.setChannelInfo(...this.peersPanel.panelContent);
+    this.view.setChannelInfo(this.peersPanel.info);
 
     // OfferDialog
-    this.offerDialog = new _offer_dialog_js__WEBPACK_IMPORTED_MODULE_5__["default"]();
+    this.offerDialog = new _offer_dialog_js__WEBPACK_IMPORTED_MODULE_7__["default"]();
     this.offerDialog.onCancel = this._onCancelOffer.bind(this);
     this.offerDialog.onModalEscape = this._onCancelOffer.bind(this);
 
     // OffersDialog
-    this.offersDialog = new _offers_dialog_js__WEBPACK_IMPORTED_MODULE_4__["default"](
+    this.offersDialog = new _offers_dialog_js__WEBPACK_IMPORTED_MODULE_6__["default"](
       this.view.modalHeader('Offers'),
     );
-    this.offersDialog.displayName = this._displayName;
+    this.offersDialog.getDisplayName = this._getDisplayName;
     this.offersDialog.onAccept = this._onAcceptOffer.bind(this)
     this.offersDialog.onIgnore = this._onIgnoreOffer.bind(this);
     this.offersDialog.hasModalContent = this._hasOffers.bind(this);
@@ -1353,111 +1527,34 @@ class Peer {
     this.client.disconnect();
   }
 
-  // Nav menu label/button builders.
+  // Callbacks and helpers.
 
-  _nameButton() {
-    const button = document.createElement('button');
-    button.classList.add('pseudo');
-    window.matchMedia(`(min-width: 480px)`).addListener(() => {
-      this._updateNameButton();
-    });
-    button.addEventListener('click', () => {
-      this._showNameDialog();
-    });
-    return button;
-  }
-
-  _connectionLabel() {
-    const label = document.createElement('label');
-    label.classList.add('pseudo', 'button');
-    window.matchMedia(`(min-width: 480px)`).addListener(() => {
-      this._updateConnectionLabel();
-    });
-    return label;
-  }
-
-  _offlineLabel() {
-    const label = document.createElement('label');
-    label.textContent = 'Offline';
-    label.classList.add('pseudo', 'button');
-    return label;
-  }
-
-  _onlineLabel() {
-    const label = document.createElement('label');
-    label.textContent = 'Online';
-    label.classList.add('pseudo', 'button');
-    return label;
-  }
-
-  _closeConnectionButton(clientId) {
-    const button = document.createElement('button');
-    button.textContent = 'Close';
-    button.classList.add('pseudo');
-    button.setAttribute('title', 'Close the connection');
-    button.addEventListener('click', () => {
-      _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].info('Closing connection');
-      this._closeConnection();
-      this.client.sendMessage(clientId, {peerAction: MESSAGES.close});
-      this.client.publish({
-        peerStatus: STATUS.available,
-        peerName: this.peerName
-      });
-      this.view.showModal(this.offersDialog);
-    });
-    return button;
-  }
-
-  // Dialog, callback and message handler utilities/helpers.
-
-  _displayName(clientId, peerName, clipWidth) {
+  _getDisplayName(peerName, clipWidth) {
     if (peerName && window.innerWidth < clipWidth) {
       let parts = peerName.split(' ');
       if (parts[0].length > 8) {
         return `${parts[0].substring(0, 6)}..`
       }
-      if (parts.length === 1) {
-        return parts[0];
-      }
-      return `${parts[0]}`
+      return parts[0];
     }
     if (peerName) {
       return peerName;
     }
-    return clientId.substr(0, 5);
+    return 'N/A';
   }
 
-  _updateNameButton() {
-    this.nameButton.textContent = this._displayName(
-      this.client.clientId, this.peerName, 480
-    );
-    if (this.peerName) {
-      this.nameButton.setAttribute(
-        'title', `${this.peerName} (${this.peerId})`
-      );
-    } else {
-      this.nameButton.setAttribute('title', 'Click to change your name');
-    }
+  _onCloseEvent(clientId) {
+    this._closeConnection('Closing connection');
+    this.client.sendMessage(clientId, {peerAction: MESSAGES.close});
+    this.client.publish({
+      peerStatus: STATUS.available,
+      peerName: this.peerName
+    });
+    this.view.showModal(this.offersDialog);
   }
 
-  _updateConnectionLabel() {
-    if (!this.connection.isIdle()) {
-      this.connectionLabel.textContent = this._displayName(
-        this.connectionLabel.clientId, this.connectionLabel.peerName, 480
-      );
-      if (this.connectionLabel.peerName) {
-        this.connectionLabel.setAttribute(
-          'title',
-          `${this.connectionLabel.peerName} (${this.connectionLabel.peerId})`
-        );
-      } else {
-        this.connectionLabel.removeAttribute('title');
-      }
-    }
-  }
-
-  _showNameDialog() {
-    this.nameDialog.init(this.peerId, this.peerName);
+  _rename() {
+    this.nameDialog.init(this.peerName);
     this.view.showModal(this.nameDialog);
   }
 
@@ -1481,16 +1578,15 @@ class Peer {
       };
       this.connection.onSdp = (sdp) => {
         this.client.sendMessage(clientId, sdp);
-        _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].info('Sent SDP');
+        _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].info('Sent SDP');
       };
       this.connection.onCandidate = (candidate) => {
         this.client.sendMessage(clientId, candidate);
-        _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].info('Sent candidate');
+        _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].info('Sent candidate');
       };
       this.connection.onIceError = () => {
-        _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].error('ICE failed');
         this.client.sendMessage(clientId, {peerAction: MESSAGES.error});
-        this._closeConnection();
+        this._closeConnection('ICE failed.');
         this.view.showAlert('ICE failed. Can\'t connect.');
         this.view.showModal(this.offersDialog);
         this.client.publish({
@@ -1498,21 +1594,22 @@ class Peer {
           peerName: this.peerName
         });
       };
-      this.connectionLabel.clientId = clientId;
-      this.connectionLabel.peerName = peerName;
-      this.connectionLabel.peerId = this._displayName(clientId);
-      this._updateConnectionLabel();
-      this.view.setNavStatus(this.connectionLabel);
-      this.view.setNavMenu(this._closeConnectionButton(clientId));
+      this.navStatus.setConnected(clientId, peerName);
+      this.view.setNavStatus(this.navStatus.menu);
+      this.navMenu.setConnected(clientId);
+      this.view.setNavMenu(this.navMenu.menu);
       this.connection.open();
     }
   }
 
-  _closeConnection() {
+  _closeConnection(...message) {
+    _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].info(...message);
     this.view.hidePlayer();
     this.connection.close();
-    this.view.setNavStatus(this.nameButton);
-    this.view.setNavMenu(this.onlineLabel);
+    this.navStatus.setIdle();
+    this.view.setNavStatus(this.navStatus.menu);
+    this.navMenu.setOnline();
+    this.view.setNavMenu(this.navMenu.menu);
   }
 
   _hasOffers() {
@@ -1524,7 +1621,7 @@ class Peer {
   _onSubmitName(peerName) {
     this.view.hideModal(this.nameDialog);
     this.peerName = peerName; // Validation in modal.
-    this._updateNameButton();
+    this.navStatus.setPeerName(peerName);
     const changed = this.client.setSessionData('peerName', peerName);
     if (changed && this.client.isSubscribed && this.connection.isIdle()) {
       this.client.publish({
@@ -1554,14 +1651,14 @@ class Peer {
       this.offerDialog.setOffering(clientId);
     };
     const onError = (error) => {
-      _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].info('Error offering connection', error.message);
+      _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].info('Error offering connection', error.message);
       this.offerDialog.setClosed();
       this.view.showAlert(error.message);
       this.view.showModal(this.offersDialog);
       this.connection.close();
     };
     if (this.connection.isIdle()) {
-      _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].info('Offering connection', clientId);
+      _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].info('Offering connection', clientId);
       this.connection.init(clientId, true, location.hostname);
       this.offerDialog.setInitializing();
       this.view.showModal(this.offerDialog);
@@ -1571,7 +1668,7 @@ class Peer {
 
   _onCancelOffer() {
     if (this.offerDialog.isOffering()) {
-      _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].info('Canceling offer');
+      _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].info('Canceling offer');
       this.client.sendMessage(
         this.offerDialog.offerId, {peerAction: MESSAGES.close}
       );
@@ -1605,15 +1702,14 @@ class Peer {
       this.offersDialog.removeOffer(clientId);
     };
     const onError = (error) => {
-      _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].info('Error accepting offer', clientId, error.message);
       this.client.sendMessage(clientId, {peerAction: MESSAGES.error});
-      this._closeConnection();
+      this._closeConnection('Error accepting offer', clientId, error.message);
       this.view.showAlert(error.message);
       this.view.showModal(this.offersDialog);
       this.offersDialog.removeOffer(clientId);
     };
     if (this.connection.isIdle()) {
-      _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].info('Accepted offer', clientId);
+      _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].info('Accepted offer', clientId);
       this.view.showPlayer();
       this.view.hideModal(this.offersDialog);
       this.connection.init(clientId, false, location.hostname);
@@ -1624,15 +1720,17 @@ class Peer {
   // Client callbacks.
 
   _onConnect() {
+    this.navMenu.setOnline();
+    this.view.setNavMenu(this.navMenu.menu);
     this.peersPanel.setOnline();
-    this.view.setNavMenu(this.onlineLabel);
   }
 
   _onDisconnect(isTimeout) {
     if (this.client.isConnected()) {
       this.client.publish({peerStatus: STATUS.gone});
     } else {
-      this.view.setNavMenu(this.offlineLabel);
+      this.navMenu.setOffline();
+      this.view.setNavMenu(this.navMenu.menu);
       this.peersPanel.setOffline();
       this.peersPanel.reset();
       this.offersDialog.reset();
@@ -1643,14 +1741,15 @@ class Peer {
         this.view.showAlert(
           'Offline. '
           + 'The connection timed out. '
-          + 'Reload to re-join the channel.'
+          + 'Reload the page to re-join the channel.'
         );
       }
     }
   }
 
   _onLogin() {
-    this.peerId = this._displayName(this.client.clientId);
+    this.navStatus.setClientId(this.client.clientId);
+    this.nameDialog.setClientId(this.client.clientId);
   }
 
   _onLoginError(message) {
@@ -1659,12 +1758,13 @@ class Peer {
 
   _onReady() {
     this.peerName = this.client.getSessionData('peerName');
-    this._updateNameButton();
-    this.view.setNavStatus(this.nameButton);
-    if (this.client.getSessionData('peerName')) {
+    this.navStatus.setPeerName(this.peerName);
+    this.navStatus.setIdle();
+    this.view.setNavStatus(this.navStatus.menu);
+    if (this.peerName) {
       this._subscribe();
     } else {
-      this._showNameDialog();
+      this._rename();
     }
   }
 
@@ -1704,7 +1804,7 @@ class Peer {
     } else if (eventData.peerStatus === STATUS.gone) {
       this._handleGone(clientId);
     } else {
-      _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].error('Bad event', clientId, eventData);
+      _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].error('Bad event', clientId, eventData);
     }
   }
 
@@ -1724,7 +1824,7 @@ class Peer {
     } else if ('sdp' in eventData) {
       this._handleSdp(clientId, eventData);
     } else {
-      _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].error('Bad message', clientId, eventData);
+      _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].error('Bad message', clientId, eventData);
     }
   }
 
@@ -1764,7 +1864,7 @@ class Peer {
     if (this.offerDialog.isOfferTo(clientId)) {
       this.offerDialog.setClosed('The other peer rejected the offer.');
     } else if (this.connection.isConnectedTo(clientId)) {
-      this._closeConnection();
+      this._closeConnection('The other peer closed the connection', clientId);
       this.client.publish({
         peerStatus: STATUS.available,
         peerName: this.peerName
@@ -1779,7 +1879,7 @@ class Peer {
 
   _handleError(clientId) {
     if (this.connection.isConnectedTo(clientId)) {
-      this._closeConnection();
+      this._closeConnection('The other peer failed to connect', clientId);
       this.client.publish({
         peerStatus: STATUS.available,
         peerName: this.peerName
@@ -1825,7 +1925,7 @@ class Peer {
       this.offerDialog.setClosed('The other peer left the channel.');
     }
     if (this.connection.isConnectedTo(clientId)) {
-      this._closeConnection();
+      this._closeConnection('The other peer left the channel', clientId);
     }
     this.peersPanel.removePeer(clientId);
     this.offersDialog.removeOffer(clientId);
@@ -1836,24 +1936,24 @@ class Peer {
 
   _handleCandidate(clientId, candidate) {
     if (this.connection.isConnectedTo(clientId)) {
-      _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].info('Received candidate');
+      _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].info('Received candidate');
       this.connection.addCandidate(candidate).then(() => {
       }).catch(error => {
-        _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].error('Error adding candidate', error);
+        _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].error('Error adding candidate', error);
       });
     }
   }
 
   _handleSdp(clientId, sdp) {
     if (this.connection.isConnectedTo(clientId)) {
-      _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].debug('Received SDP');
+      _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].debug('Received SDP');
       const sdpHandler = (newJsonSdp) => {
         this.client.sendMessage(clientId, newJsonSdp);
-        _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].info('Sent SDP');
+        _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].info('Sent SDP');
       };
       this.connection.addSdp(sdp, sdpHandler).then(() => {
       }).catch(error => {
-        _logger_js__WEBPACK_IMPORTED_MODULE_7__["default"].error('Error adding SDP', error);
+        _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].error('Error adding SDP', error);
       });
     }
   }
@@ -1883,13 +1983,13 @@ class PeersPanel {
 
   constructor() {
     this.panel = this._panel();
-    this.panelContent = [this.panel];
+    this.info = this.panel;
     this.statusMsg = this._statusMsg();
     this.setOffline();
     this.panel.append(this.statusMsg);
     this.peers = {};
     this.onOffer = () => {};
-    this.displayName = () => {return 'N/A'};
+    this.getDisplayName = () => {return 'N/A'};
   }
 
   _panel() {
@@ -1913,17 +2013,16 @@ class PeersPanel {
   }
 
   _setPeerName(peer) {
-    peer.label.textContent = this.displayName(
-      peer.clientId, peer.peerName, 480
-    );
     if (peer.peerName) {
+      peer.label.textContent = this.getDisplayName(peer.peerName, 480);
+      peer.label.setAttribute('title', `${peer.peerName} (${peer.peerId})`);
       peer.offerButton.setAttribute(
         'title', `Connect to ${peer.peerName} (${peer.peerId})`
       );
-      peer.label.setAttribute('title', `${peer.peerName} (${peer.peerId})`);
     } else {
-      peer.offerButton.setAttribute('title', `Connect to ${peer.peerId}`);
+      peer.label.textContent = peer.peerId;
       peer.label.removeAttribute('title');
+      peer.offerButton.setAttribute('title', `Connect to ${peer.peerId}`);
     }
   }
 
@@ -1934,11 +2033,11 @@ class PeersPanel {
   }
 
   setOnline() {
-    this.statusMsg.innerHTML = 'Waiting for others to join.';
+    this.statusMsg.innerHTML = 'Online. Waiting for others to join.';
   }
 
   setOffline() {
-    this.statusMsg.innerHTML = 'Offline';
+    this.statusMsg.innerHTML = 'Offline.';
   }
 
   addPeer(clientId, peerName) {
@@ -1970,8 +2069,8 @@ class PeersPanel {
     section.append(offerButton);
     peer.added = new Date();
     peer.clientId = clientId;
+    peer.peerId = clientId.substr(0, 5);
     peer.peerName = peerName;
-    peer.peerId = this.displayName(clientId);
     peer.offerButton = offerButton;
     peer.label = label;
     this.peers[clientId] = peer;
