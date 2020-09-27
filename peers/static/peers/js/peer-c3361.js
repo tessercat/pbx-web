@@ -172,7 +172,7 @@ class Client {
     } else if (this.sessionData[key] && !value) {
       changed = true;
       delete this.sessionData[key];
-      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].info('Deleted', key);
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].info('Unset', key);
     }
     if (changed) {
       localStorage.setItem(
@@ -843,6 +843,70 @@ let logger = {
 
 /***/ }),
 
+/***/ "./src/peer/help-dialog.js":
+/*!*********************************!*\
+  !*** ./src/peer/help-dialog.js ***!
+  \*********************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return NameDialog; });
+/*
+ * Copyright (c) 2020 Peter Christensen. All Rights Reserved.
+ * CC BY-NC-ND 4.0.
+ */
+const HELP_TEXT = [
+  'Your device must have both a camera and a microphone '
+  + 'installed and enabled. '
+  + 'Make sure the browser has permission to use them.',
+  'Check volume levels.',
+  'Poor wireless is often the cause of poor quality calls.',
+  'Connections fail when firewalls get in the way. '
+  + 'Use a VPN when connecting from restrictive networks.',
+  'Otherwise, the service should work between '
+  + 'Firefox and Chromium-based browsers '
+  + 'on Android, Windows and Linux. '
+  + 'It hasn\'t been tested on appleOS.'
+]
+
+class NameDialog {
+
+  constructor(header) {
+    this.section = this._section();
+    this.footer = this._footer();
+    this.modalContent = [header, this.section, this.footer];
+    this.onClose = () => {};
+  }
+
+  _section() {
+    const section = document.createElement('section');
+    HELP_TEXT.forEach((line) => {
+      const p = document.createElement('p');
+      p.innerHTML = line;
+      section.append(p);
+    });
+    return section;
+  }
+
+  _footer() {
+    const closeButton = document.createElement('button');
+    closeButton.setAttribute('title', 'Close this box');
+    closeButton.textContent = 'Close';
+    closeButton.style.float = 'right';
+    closeButton.addEventListener('click', () => {
+      this.onClose();
+    });
+    const footer = document.createElement('footer');
+    footer.append(closeButton);
+    return footer;
+  }
+}
+
+
+/***/ }),
+
 /***/ "./src/peer/index.js":
 /*!***************************!*\
   !*** ./src/peer/index.js ***!
@@ -1020,47 +1084,44 @@ __webpack_require__.r(__webpack_exports__);
 class NavMenu {
 
   constructor() {
-    this.offlineLabel = this._offlineLabel();
-    this.onlineLabel = this._onlineLabel();
-    this.closeButton = this._closeButton();
+    this.openHelpButton = this._openHelpButton();
+    this.closeConnectionButton = this._closeConnectionButton();
     this.menu = null;
-    this.onCloseEvent = () => {};
+    this.onOpenHelp = () => {};
+    this.onCloseConnection = () => {};
   }
 
   setOffline() {
-    this.menu = this.offlineLabel;
+    this.menu = this.openHelpButton;
   }
 
   setOnline() {
-    this.menu = this.onlineLabel;
+    this.menu = this.openHelpButton;
   }
 
   setConnected(clientId) {
-    this.closeButton.clientId = clientId;
-    this.menu = this.closeButton;
+    this.closeConnectionButton.clientId = clientId;
+    this.menu = this.closeConnectionButton;
   }
 
-  _offlineLabel() {
-    const label = document.createElement('label');
-    label.textContent = 'Offline';
-    label.classList.add('pseudo', 'button');
-    return label;
+  _openHelpButton() {
+    const button = document.createElement('button');
+    button.textContent = 'Help';
+    button.classList.add('pseudo');
+    button.setAttribute('title', 'Show help box');
+    button.addEventListener('click', () => {
+      this.onOpenHelp();
+    });
+    return button;
   }
 
-  _onlineLabel() {
-    const label = document.createElement('label');
-    label.textContent = 'Online';
-    label.classList.add('pseudo', 'button');
-    return label;
-  }
-
-  _closeButton() {
+  _closeConnectionButton() {
     const button = document.createElement('button');
     button.textContent = 'Close';
     button.classList.add('pseudo');
     button.setAttribute('title', 'Close the connection');
     button.addEventListener('click', () => {
-      this.onCloseEvent(this.closeButton.clientId);
+      this.onCloseConnection(this.closeConnectionButton.clientId);
     });
     return button;
   }
@@ -1089,7 +1150,7 @@ class NavStatus {
     this.nameButton = this._nameButton();
     this.peerLabel = this._peerLabel();
     this.menu = null;
-    this.onRenameEvent = () => {};
+    this.onOpen = () => {};
     this.getDisplayName = () => {'N/A'};
   }
 
@@ -1121,7 +1182,7 @@ class NavStatus {
       this._initNameButton();
     });
     button.addEventListener('click', () => {
-      this.onRenameEvent();
+      this.onOpen();
     });
     return button;
   }
@@ -1301,6 +1362,10 @@ class OffersDialog {
     }
   }
 
+  hasOffers() {
+    return Object.keys(this.offers).length > 0;
+  }
+
   addOffer(clientId, peerName) {
     if (this.offers[clientId]) {
       this.offers[clientId].added = new Date();
@@ -1421,16 +1486,18 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _connection_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../connection.js */ "./src/connection.js");
 /* harmony import */ var _nav_status_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./nav-status.js */ "./src/peer/nav-status.js");
 /* harmony import */ var _nav_menu_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./nav-menu.js */ "./src/peer/nav-menu.js");
-/* harmony import */ var _name_dialog_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./name-dialog.js */ "./src/peer/name-dialog.js");
-/* harmony import */ var _peers_panel_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./peers-panel.js */ "./src/peer/peers-panel.js");
-/* harmony import */ var _offers_dialog_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./offers-dialog.js */ "./src/peer/offers-dialog.js");
-/* harmony import */ var _offer_dialog_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./offer-dialog.js */ "./src/peer/offer-dialog.js");
-/* harmony import */ var _view_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../view.js */ "./src/view.js");
-/* harmony import */ var _logger_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../logger.js */ "./src/logger.js");
+/* harmony import */ var _help_dialog_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./help-dialog.js */ "./src/peer/help-dialog.js");
+/* harmony import */ var _name_dialog_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./name-dialog.js */ "./src/peer/name-dialog.js");
+/* harmony import */ var _peers_panel_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./peers-panel.js */ "./src/peer/peers-panel.js");
+/* harmony import */ var _offers_dialog_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./offers-dialog.js */ "./src/peer/offers-dialog.js");
+/* harmony import */ var _offer_dialog_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./offer-dialog.js */ "./src/peer/offer-dialog.js");
+/* harmony import */ var _view_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../view.js */ "./src/view.js");
+/* harmony import */ var _logger_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../logger.js */ "./src/logger.js");
 /*
  * Copyright (c) 2020 Peter Christensen. All Rights Reserved.
  * CC BY-NC-ND 4.0.
  */
+
 
 
 
@@ -1476,47 +1543,48 @@ class Peer {
     this.connection = new _connection_js__WEBPACK_IMPORTED_MODULE_1__["default"]();
 
     // View
-    this.view = new _view_js__WEBPACK_IMPORTED_MODULE_8__["default"]();
+    this.view = new _view_js__WEBPACK_IMPORTED_MODULE_9__["default"]();
 
     // Nav status
     this.navStatus = new _nav_status_js__WEBPACK_IMPORTED_MODULE_2__["default"]();
     this.navStatus.getDisplayName = this._getDisplayName;
-    this.navStatus.onRenameEvent = this._rename.bind(this);
+    this.navStatus.onOpen = this._showNameDialog.bind(this);
 
     // Nav menu
     this.navMenu = new _nav_menu_js__WEBPACK_IMPORTED_MODULE_3__["default"]();
     this.navMenu.setOffline();
-    this.navMenu.onCloseEvent = this._onCloseEvent.bind(this);
+    this.navMenu.onCloseConnection = this._onCloseConnection.bind(this);
+    this.navMenu.onOpenHelp = this._onOpenHelp.bind(this);
     this.view.setNavMenu(this.navMenu.menu);
+
+    // Help dialog
+    this.helpDialog = new _help_dialog_js__WEBPACK_IMPORTED_MODULE_4__["default"](this.view.modalHeader('Troubleshooting'));
+    this.helpDialog.onClose = this._onCloseHelp.bind(this);
 
     // NameDialog
     this.peerName = null;
-    this.nameDialog = new _name_dialog_js__WEBPACK_IMPORTED_MODULE_4__["default"](
-      this.view.modalHeader('Enter your name')
-    )
+    this.nameDialog = new _name_dialog_js__WEBPACK_IMPORTED_MODULE_5__["default"](this.view.modalHeader('Enter your name'));
     this.nameDialog.onSubmit = this._onSubmitName.bind(this);
     this.nameDialog.onClose = this._onCancelName.bind(this);
     this.nameDialog.onModalEscape = this._onCancelName.bind(this);
 
     // PeersPanel
-    this.peersPanel = new _peers_panel_js__WEBPACK_IMPORTED_MODULE_5__["default"]();
+    this.peersPanel = new _peers_panel_js__WEBPACK_IMPORTED_MODULE_6__["default"]();
     this.peersPanel.getDisplayName = this._getDisplayName;
     this.peersPanel.onOffer = this._onOffer.bind(this);
     this.view.setChannelInfo(this.peersPanel.info);
 
     // OfferDialog
-    this.offerDialog = new _offer_dialog_js__WEBPACK_IMPORTED_MODULE_7__["default"]();
+    this.offerDialog = new _offer_dialog_js__WEBPACK_IMPORTED_MODULE_8__["default"]();
     this.offerDialog.onCancel = this._onCancelOffer.bind(this);
     this.offerDialog.onModalEscape = this._onCancelOffer.bind(this);
 
     // OffersDialog
-    this.offersDialog = new _offers_dialog_js__WEBPACK_IMPORTED_MODULE_6__["default"](
-      this.view.modalHeader('Offers'),
-    );
+    this.offersDialog = new _offers_dialog_js__WEBPACK_IMPORTED_MODULE_7__["default"](this.view.modalHeader('Offers'));
     this.offersDialog.getDisplayName = this._getDisplayName;
     this.offersDialog.onAccept = this._onAcceptOffer.bind(this)
     this.offersDialog.onIgnore = this._onIgnoreOffer.bind(this);
-    this.offersDialog.hasModalContent = this._hasOffers.bind(this);
+    this.offersDialog.hasModalContent = this.offersDialog.hasOffers;
   }
 
   connect() {
@@ -1543,17 +1611,7 @@ class Peer {
     return 'N/A';
   }
 
-  _onCloseEvent(clientId) {
-    this._closeConnection('Closing connection');
-    this.client.sendMessage(clientId, {peerAction: MESSAGES.close});
-    this.client.publish({
-      peerStatus: STATUS.available,
-      peerName: this.peerName
-    });
-    this.view.showModal(this.offersDialog);
-  }
-
-  _rename() {
+  _showNameDialog() {
     this.nameDialog.init(this.peerName);
     this.view.showModal(this.nameDialog);
   }
@@ -1578,11 +1636,11 @@ class Peer {
       };
       this.connection.onSdp = (sdp) => {
         this.client.sendMessage(clientId, sdp);
-        _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].info('Sent SDP');
+        _logger_js__WEBPACK_IMPORTED_MODULE_10__["default"].info('Sent SDP');
       };
       this.connection.onCandidate = (candidate) => {
         this.client.sendMessage(clientId, candidate);
-        _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].info('Sent candidate');
+        _logger_js__WEBPACK_IMPORTED_MODULE_10__["default"].info('Sent candidate');
       };
       this.connection.onIceError = () => {
         this.client.sendMessage(clientId, {peerAction: MESSAGES.error});
@@ -1603,7 +1661,7 @@ class Peer {
   }
 
   _closeConnection(...message) {
-    _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].info(...message);
+    _logger_js__WEBPACK_IMPORTED_MODULE_10__["default"].info(...message);
     this.view.hidePlayer();
     this.connection.close();
     this.navStatus.setIdle();
@@ -1612,8 +1670,26 @@ class Peer {
     this.view.setNavMenu(this.navMenu.menu);
   }
 
-  _hasOffers() {
-    return Object.keys(this.offersDialog.offers).length > 0;
+  // Nav menu callbacks.
+
+  _onCloseConnection(clientId) {
+    this._closeConnection('Closing connection');
+    this.client.sendMessage(clientId, {peerAction: MESSAGES.close});
+    this.client.publish({
+      peerStatus: STATUS.available,
+      peerName: this.peerName
+    });
+    this.view.showModal(this.offersDialog);
+  }
+
+  // HelpDialog callbacks.
+
+  _onCloseHelp() {
+    this.view.hideModal(this.helpDialog);
+  }
+
+  _onOpenHelp() {
+    this.view.showModal(this.helpDialog);
   }
 
   // NameDialog callbacks.
@@ -1651,14 +1727,14 @@ class Peer {
       this.offerDialog.setOffering(clientId);
     };
     const onError = (error) => {
-      _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].info('Error offering connection', error.message);
+      _logger_js__WEBPACK_IMPORTED_MODULE_10__["default"].info('Error offering connection', error.message);
       this.offerDialog.setClosed();
       this.view.showAlert(error.message);
       this.view.showModal(this.offersDialog);
       this.connection.close();
     };
     if (this.connection.isIdle()) {
-      _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].info('Offering connection', clientId);
+      _logger_js__WEBPACK_IMPORTED_MODULE_10__["default"].info('Offering connection', clientId);
       this.connection.init(clientId, true, location.hostname);
       this.offerDialog.setInitializing();
       this.view.showModal(this.offerDialog);
@@ -1668,7 +1744,7 @@ class Peer {
 
   _onCancelOffer() {
     if (this.offerDialog.isOffering()) {
-      _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].info('Canceling offer');
+      _logger_js__WEBPACK_IMPORTED_MODULE_10__["default"].info('Canceling offer');
       this.client.sendMessage(
         this.offerDialog.offerId, {peerAction: MESSAGES.close}
       );
@@ -1687,7 +1763,7 @@ class Peer {
   _onIgnoreOffer(clientId) {
     this.offersDialog.removeOffer(clientId);
     this.offersDialog.ignoreOffer(clientId);
-    if (!this._hasOffers()) {
+    if (!this.offersDialog.hasOffers()) {
       this.view.hideModal(this.offersDialog);
     }
   }
@@ -1709,7 +1785,7 @@ class Peer {
       this.offersDialog.removeOffer(clientId);
     };
     if (this.connection.isIdle()) {
-      _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].info('Accepted offer', clientId);
+      _logger_js__WEBPACK_IMPORTED_MODULE_10__["default"].info('Accepted offer', clientId);
       this.view.showPlayer();
       this.view.hideModal(this.offersDialog);
       this.connection.init(clientId, false, location.hostname);
@@ -1764,7 +1840,7 @@ class Peer {
     if (this.peerName) {
       this._subscribe();
     } else {
-      this._rename();
+      this._showNameDialog();
     }
   }
 
@@ -1789,7 +1865,7 @@ class Peer {
       }
     }
     this.offersDialog.clean();
-    if (!this._hasOffers()) {
+    if (!this.offersDialog.hasOffers()) {
       this.view.hideModal(this.offersDialog);
     }
   }
@@ -1804,7 +1880,7 @@ class Peer {
     } else if (eventData.peerStatus === STATUS.gone) {
       this._handleGone(clientId);
     } else {
-      _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].error('Bad event', clientId, eventData);
+      _logger_js__WEBPACK_IMPORTED_MODULE_10__["default"].error('Bad event', clientId, eventData);
     }
   }
 
@@ -1824,7 +1900,7 @@ class Peer {
     } else if ('sdp' in eventData) {
       this._handleSdp(clientId, eventData);
     } else {
-      _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].error('Bad message', clientId, eventData);
+      _logger_js__WEBPACK_IMPORTED_MODULE_10__["default"].error('Bad message', clientId, eventData);
     }
   }
 
@@ -1872,7 +1948,7 @@ class Peer {
       this.view.showModal(this.offersDialog);
     }
     this.offersDialog.removeOffer(clientId);
-    if (!this._hasOffers()) {
+    if (!this.offersDialog.hasOffers()) {
       this.view.hideModal(this.offersDialog);
     }
   }
@@ -1895,7 +1971,7 @@ class Peer {
       peerName = '';
     }
     this.offersDialog.removeOffer(clientId);
-    if (!this._hasOffers()) {
+    if (!this.offersDialog.hasOffers()) {
       this.view.hideModal(this.offersDialog);
     }
     this.peersPanel.addPeer(clientId, peerName);
@@ -1929,31 +2005,31 @@ class Peer {
     }
     this.peersPanel.removePeer(clientId);
     this.offersDialog.removeOffer(clientId);
-    if (!this._hasOffers()) {
+    if (!this.offersDialog.hasOffers()) {
       this.view.hideModal(this.offersDialog);
     }
   }
 
   _handleCandidate(clientId, candidate) {
     if (this.connection.isConnectedTo(clientId)) {
-      _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].info('Received candidate');
+      _logger_js__WEBPACK_IMPORTED_MODULE_10__["default"].info('Received candidate');
       this.connection.addCandidate(candidate).then(() => {
       }).catch(error => {
-        _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].error('Error adding candidate', error);
+        _logger_js__WEBPACK_IMPORTED_MODULE_10__["default"].error('Error adding candidate', error);
       });
     }
   }
 
   _handleSdp(clientId, sdp) {
     if (this.connection.isConnectedTo(clientId)) {
-      _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].debug('Received SDP');
+      _logger_js__WEBPACK_IMPORTED_MODULE_10__["default"].debug('Received SDP');
       const sdpHandler = (newJsonSdp) => {
         this.client.sendMessage(clientId, newJsonSdp);
-        _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].info('Sent SDP');
+        _logger_js__WEBPACK_IMPORTED_MODULE_10__["default"].info('Sent SDP');
       };
       this.connection.addSdp(sdp, sdpHandler).then(() => {
       }).catch(error => {
-        _logger_js__WEBPACK_IMPORTED_MODULE_9__["default"].error('Error adding SDP', error);
+        _logger_js__WEBPACK_IMPORTED_MODULE_10__["default"].error('Error adding SDP', error);
       });
     }
   }
