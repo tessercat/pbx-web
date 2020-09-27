@@ -13,6 +13,7 @@ handler404 = custom404
 
 urlpatterns = [
     path('', include('django_prometheus.urls')),
+    path('', include('common.urls')),
     path('', include('channels.urls')),
     path('peers/', include('peers.urls')),
     path('fsapi', include('fsapi.urls')),
