@@ -858,17 +858,17 @@ __webpack_require__.r(__webpack_exports__);
  * CC BY-NC-ND 4.0.
  */
 const HELP_TEXT = [
-  'Your device must have both a camera and a microphone '
-  + 'installed and enabled. '
+  'Your phone, tablet or computer '
+  + 'must have a camera and microphone installed and enabled. '
   + 'Make sure the browser has permission to use them.',
   'Check volume levels.',
   'Poor wireless is often the cause of poor quality calls.',
   'Connections fail when firewalls get in the way. '
-  + 'Use a VPN when connecting from restrictive networks.',
+  + 'Use a VPN when connecting to or from restrictive networks.',
   'Otherwise, the service should work between '
   + 'Firefox and Chromium-based browsers '
-  + 'on Android, Windows and Linux. '
-  + 'It hasn\'t been tested on appleOS.'
+  + 'on Android, Windows and Linux, '
+  + 'but it hasn\'t been tested on appleOS.'
 ]
 
 class NameDialog {
@@ -1529,7 +1529,6 @@ class Peer {
 
     // Client
     this.client = new _client_js__WEBPACK_IMPORTED_MODULE_0__["default"]();
-    this.client.onConnect = this._onConnect.bind(this);
     this.client.onDisconnect = this._onDisconnect.bind(this);
     this.client.onLogin = this._onLogin.bind(this);
     this.client.onLoginError = this._onLoginError.bind(this);
@@ -1560,6 +1559,7 @@ class Peer {
     // Help dialog
     this.helpDialog = new _help_dialog_js__WEBPACK_IMPORTED_MODULE_4__["default"](this.view.modalHeader('Troubleshooting'));
     this.helpDialog.onClose = this._onCloseHelp.bind(this);
+    this.helpDialog.onModalEscape = this._onCloseHelp.bind(this);
 
     // NameDialog
     this.peerName = null;
@@ -1617,16 +1617,26 @@ class Peer {
   }
 
   _subscribe() {
-    const onSuccess = () => {
+    const onPubSuccess = () => {
+      this.navMenu.setOnline();
+      this.view.setNavMenu(this.navMenu.menu);
+      this.peersPanel.setOnline();
+    };
+    const onPubError = () => {
+      this.view.showAlert('Channel access error');
+      this.disconnect();
+    }
+    const onSubSuccess = () => {
       this.client.publish({
         peerStatus: STATUS.ready,
         peerName: this.peerName
-      });
+      }, onPubSuccess, onPubError);
     };
-    const onError = () => {
+    const onSubError = () => {
       this.view.showAlert('Subscription error');
+      this.disconnect();
     }
-    this.client.subscribe(onSuccess, onError);
+    this.client.subscribe(onSubSuccess, onSubError);
   }
 
   _openConnection(clientId, peerName) {
@@ -1794,12 +1804,6 @@ class Peer {
   }
 
   // Client callbacks.
-
-  _onConnect() {
-    this.navMenu.setOnline();
-    this.view.setNavMenu(this.navMenu.menu);
-    this.peersPanel.setOnline();
-  }
 
   _onDisconnect(isTimeout) {
     if (this.client.isConnected()) {

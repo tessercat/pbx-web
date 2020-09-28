@@ -3,8 +3,7 @@
 It's a person-to-person
 voice and video
 web chat service.
-
-Use this service at your own risk,
+Use it at your own risk,
 with no warranty of any kind,
 express or implied.
 
