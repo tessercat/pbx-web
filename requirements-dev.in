@@ -1,8 +1,7 @@
 Django
 daphne
-httpx
-channels
 django-prometheus
+httpx
 markdown
 flake8
 pylint
