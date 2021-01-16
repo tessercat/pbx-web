@@ -97,7 +97,6 @@ USE_X_FORWARDED_PORT = True
 
 INSTALLED_APPS = [
     'django_prometheus',
-    'firewall.apps.FirewallConfig',
     'common.apps.CommonConfig',
     'channels.apps.ChannelsConfig',
     'peers.apps.PeersConfig',
@@ -118,7 +117,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'firewall.middleware.FirewallMiddleware',
+    'common.middleware.AdminKnockMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_prometheus.middleware.PrometheusAfterMiddleware',
