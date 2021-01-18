@@ -1,4 +1,4 @@
-""" FsApi app view module. """
+""" Fsapi app view module. """
 import logging
 from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
@@ -23,8 +23,9 @@ def custom404(request):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class FsApiView(View):
-    """ Process API requests. """
+class FsapiView(View):
+    """ Process API requests by passing the request to a registered
+    fsapi request handler. """
 
     http_method_names = ['post']
 

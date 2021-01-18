@@ -2,8 +2,9 @@
 import ast
 import os
 import random
-from fsapi.handlers import fsapi_request_handler_registry
-from channels.handlers import verto_auth_handler_registry
+from common.registries import common_protected_paths_registry
+from fsapi.registries import fsapi_request_handler_registry
+from verto.registries import verto_auth_handler_registry
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -62,14 +63,23 @@ DEBUG = False
 
 EMAIL_SUBJECT_PREFIX = '[PBX] '
 
+
+# App-specific settings
+
+COMMON_CSS = None
+
+COMMON_PROTECTED_PATHS = common_protected_paths_registry
+
 FSAPI_REQUEST_HANDLERS = fsapi_request_handler_registry
 
-PROTECTED_PATHS = (
-    '/metrics',
-    '/fsapi',
-)
+PEERS_CSS = None
+
+PEERS_PEER_JS = None
+
+PEERS_ADAPTER_JS = None
 
 VERTO_AUTH_HANDLERS = verto_auth_handler_registry
+
 
 # Header and cookie definition
 
@@ -98,7 +108,7 @@ USE_X_FORWARDED_PORT = True
 INSTALLED_APPS = [
     'django_prometheus',
     'common.apps.CommonConfig',
-    'channels.apps.ChannelsConfig',
+    'verto.apps.VertoConfig',
     'peers.apps.PeersConfig',
     'fsapi.apps.FsapiConfig',
     'django.contrib.admin',
@@ -110,10 +120,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'common.middleware.ProtectedPathsMiddleware',
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'common.middleware.ProtectedPathsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',

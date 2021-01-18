@@ -6,12 +6,67 @@ from fnmatch import fnmatch
 from django.conf import settings
 from django.http import Http404, HttpResponseForbidden, JsonResponse
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.generic.base import TemplateView
 from django.views.generic.detail import BaseDetailView, DetailView
-from channels.models import Channel, Client
+from common.decorators import cache_public
+from verto.models import Channel, Client
 
 
-class SessionsView(BaseDetailView):
-    """ Peer channel session registration view. """
+class IndexView(TemplateView):
+    """ Public peer channels index view. """
+
+    template_name = 'peers/index.html'
+
+    def public_channels(self):
+        """ Return public channel query set. """
+        # pylint: disable=no-self-use
+        channels = Channel.objects.filter(realm='peers', is_public=True)
+        for channel in channels:
+            channel.url = 'https://%s/%s/%s' % (
+                settings.PBX_HOSTNAME, channel.realm, channel.channel_id
+            )
+        return channels
+
+
+@method_decorator(cache_public(60 * 15), name='dispatch')
+class AboutView(TemplateView):
+    """ About the peer channels app view. """
+    template_name = 'peers/about.html'
+
+
+class PeerView(DetailView):
+    """ Peer client channel view. """
+    model = Channel
+    slug_field = 'channel_id'
+    slug_url_kwarg = 'channel_id'
+    static_dir = os.path.join(settings.BASE_DIR, 'static', 'peers', 'js')
+
+    def _static_path(self, target):
+        pattern = '%s-?????.js' % target
+        for filename in os.listdir(self.static_dir):
+            if fnmatch(filename, pattern):
+                return 'peers/js/%s' % filename
+        return None
+
+    def adapter_path(self):
+        """ Return the adapter file's static path. """
+        return self._static_path('adapter')
+
+    def client_path(self):
+        """ Return the peer client's static path. """
+        return self._static_path('peer')
+
+    def get_object(self, queryset=None):
+        """ Raise 404 when auth realm is not correct. """
+        channel = super().get_object()
+        if channel.realm != 'peers':
+            raise Http404
+        return channel
+
+
+class SessionView(BaseDetailView):
+    """ Peer client session registration view. """
     model = Channel
     slug_field = 'channel_id'
     slug_url_kwarg = 'channel_id'
@@ -44,6 +99,7 @@ class SessionsView(BaseDetailView):
                 session_id=session_id
             )
         return {
+            'sessionId': str(client.session_id),
             'clientId': str(client.client_id),
             'password': str(client.password)
         }
@@ -61,33 +117,3 @@ class SessionsView(BaseDetailView):
         if not context:
             return HttpResponseForbidden()
         return JsonResponse(context)
-
-
-class ChannelView(DetailView):
-    """ Peers channel object detail view. """
-    model = Channel
-    slug_field = 'channel_id'
-    slug_url_kwarg = 'channel_id'
-    static_dir = os.path.join(settings.BASE_DIR, 'static', 'peers', 'js')
-
-    def _static_path(self, target):
-        pattern = '%s-?????.js' % target
-        for filename in os.listdir(self.static_dir):
-            if fnmatch(filename, pattern):
-                return 'peers/js/%s' % filename
-        return None
-
-    def adapter_path(self):
-        """ Return the adapter file's static path. """
-        return self._static_path('adapter')
-
-    def client_path(self):
-        """ Return the peer client's static path. """
-        return self._static_path('peer')
-
-    def get_object(self, queryset=None):
-        """ Raise 404 when auth realm is not correct. """
-        channel = super().get_object()
-        if channel.realm != 'peers':
-            raise Http404
-        return channel

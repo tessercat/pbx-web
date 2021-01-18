@@ -1,9 +1,7 @@
 This Django project
-serves the JavaScript client in the
-[pbx-client](https://github.com/tessercat/pbx-client)
-repo
-and acts as configuration server
+serves the client in
+[pbx-ui](https://github.com/tessercat/pbx-ui)
+and acts as a configuration server
 for the FreeSWITCH binaries
-and base configuration in the
-[pbx-amd64](https://github.com/tessercat/pbx-amd64)
-repo.
+and base configuration in
+[pbx-amd64](https://github.com/tessercat/pbx-amd64).

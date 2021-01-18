@@ -2,10 +2,10 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import Client
-from firewall.tests.base import CommonTestCase
+from common.tests.base import BaseTestCase
 
 
-class PortKnockTestCase(CommonTestCase):
+class PortKnockTestCase(BaseTestCase):
     """ Verify port knocking. """
 
     @staticmethod
