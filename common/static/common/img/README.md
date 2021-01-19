@@ -1,7 +1,5 @@
-The `user-friends-solid.svg` icon
-was downloaded from
-https://fontawesome.com/icons/user-friends?style=solid,
-Version 5.0.11.
-The license is
-Creative Commons Attribution 4.0 International,
-https://fontawesome.com/license.
+The icon is the Flying Saucer emoji designed by
+[OpenMoji](https://openmoji.org/),
+the emoji and icon project.
+License
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/#).
