@@ -1,8 +1,6 @@
 """ Peers app views module. """
 from datetime import timedelta
-import os
 from uuid import UUID
-from fnmatch import fnmatch
 from django.conf import settings
 from django.http import Http404, HttpResponseForbidden, JsonResponse
 from django.utils import timezone
@@ -13,10 +11,54 @@ from common.decorators import cache_public
 from verto.models import Channel, Client
 
 
-class IndexView(TemplateView):
-    """ Public peer channels index view. """
+@method_decorator(cache_public(60 * 15), name='dispatch')
+class AboutView(TemplateView):
+    """ About the peer channels app view. """
+    template_name = 'peers/about.html'
 
-    template_name = 'peers/index.html'
+    def get_context_data(self, **kwargs):
+        """ Insert data into template context. """
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'About this site'
+        context['common_css'] = settings.COMMON_CSS
+        return context
+
+
+class PeerView(DetailView):
+    """ Peer client channel view. """
+    model = Channel
+    slug_field = 'channel_id'
+    slug_url_kwarg = 'channel_id'
+    template_name = 'peers/peer.html'
+
+    def get_context_data(self, **kwargs):
+        """ Insert data into template context. """
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = context['object'].topic
+        context['peer_css'] = settings.PEERS_CSS
+        context['adapter_js'] = settings.PEERS_ADAPTER_JS
+        context['peer_js'] = settings.PEERS_PEER_JS
+        return context
+
+    def get_object(self, queryset=None):
+        """ Raise 404 when auth realm is not correct. """
+        channel = super().get_object()
+        if channel.realm != 'peers':
+            raise Http404
+        return channel
+
+
+class PublicView(TemplateView):
+    """ Public peer channels view. """
+
+    template_name = 'peers/public.html'
+
+    def get_context_data(self, **kwargs):
+        """ Insert data into template context. """
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Public channels'
+        context['peer_css'] = settings.PEERS_CSS
+        return context
 
     def public_channels(self):
         """ Return public channel query set. """
@@ -27,42 +69,6 @@ class IndexView(TemplateView):
                 settings.PBX_HOSTNAME, channel.realm, channel.channel_id
             )
         return channels
-
-
-@method_decorator(cache_public(60 * 15), name='dispatch')
-class AboutView(TemplateView):
-    """ About the peer channels app view. """
-    template_name = 'peers/about.html'
-
-
-class PeerView(DetailView):
-    """ Peer client channel view. """
-    model = Channel
-    slug_field = 'channel_id'
-    slug_url_kwarg = 'channel_id'
-    static_dir = os.path.join(settings.BASE_DIR, 'static', 'peers', 'js')
-
-    def _static_path(self, target):
-        pattern = '%s-?????.js' % target
-        for filename in os.listdir(self.static_dir):
-            if fnmatch(filename, pattern):
-                return 'peers/js/%s' % filename
-        return None
-
-    def adapter_path(self):
-        """ Return the adapter file's static path. """
-        return self._static_path('adapter')
-
-    def client_path(self):
-        """ Return the peer client's static path. """
-        return self._static_path('peer')
-
-    def get_object(self, queryset=None):
-        """ Raise 404 when auth realm is not correct. """
-        channel = super().get_object()
-        if channel.realm != 'peers':
-            raise Http404
-        return channel
 
 
 class SessionView(BaseDetailView):

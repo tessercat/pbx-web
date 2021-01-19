@@ -1,19 +1,27 @@
 {% extends "common/base.html" %}
+{% load static %}
 
-{% block title %}
-    <title>About this site</title>
+{% block style %}
+    <link rel="stylesheet" href="{% static 'common/css/'|add:common_css %}">
 {% endblock %}
 
 {% block content %}
-      <section>
+    <main class="padded">
+      <article>
         <h1>What is this thing?</h1>
-        <p>
-It's a person-to-person
-voice and video
-web chat service.
-Use it at your own risk,
-with no warranty of any kind,
-express or implied.
-        </p>
-      </section>
+        <p class="error">It's a person-to-person
+        voice and video
+        web chat service.
+        Use it at your own risk,
+        with no warranty of any kind,
+        express or implied.</p>
+      </article>
+      <footer>
+        <nav>
+          <ul>
+            <li><a href="/" title="PBX home">Home</a></li>
+          </ul>
+        </nav>
+      </footer>
+    </main>
 {% endblock %}

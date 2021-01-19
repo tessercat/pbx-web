@@ -1,0 +1,21 @@
+{% extends "common/base.html" %}
+{% load static %}
+
+{% block style %}
+    <link rel="stylesheet" href="{% static 'peers/css/'|add:peer_css %}">
+{% endblock %}
+
+{% block content %}
+    <main class="padded">
+      <article>
+        <p class="error">This is a list of public channels.</p>
+      </article>
+      <footer>
+        <nav>
+          <ul>
+            <li><a href="/about" title="About this site">About</a></li>
+          </ul>
+        </nav>
+      </footer>
+    </main>
+{% endblock %}

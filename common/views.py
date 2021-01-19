@@ -15,7 +15,7 @@ def custom400(request, exception):
         request,
         'common/error.html',
         {
-            'css_file': settings.COMMON_CSS,
+            'common_css': settings.COMMON_CSS,
             'message': 'Bad Request',
             'page_title': '400 Bad Request'
         },
@@ -29,7 +29,7 @@ def custom403(request, reason=''):
         request,
         'common/error.html',
         {
-            'css_file': settings.COMMON_CSS,
+            'common_css': settings.COMMON_CSS,
             'message': 'Forbidden',
             'page_title': '403 Forbidden'
         },
@@ -45,7 +45,7 @@ def custom404(request, exception):
         request,
         'common/error.html',
         {
-            'css_file': settings.COMMON_CSS,
+            'common_css': settings.COMMON_CSS,
             'message': 'Not Found',
             'page_title': '404 Not Found'
         },

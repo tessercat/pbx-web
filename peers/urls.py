@@ -1,13 +1,13 @@
 """ Peers app URL config. """
 from django.urls import path
-from peers.views import AboutView, IndexView, PeerView, SessionView
+from peers.views import AboutView, PeerView, PublicView, SessionView
 
 
 urlpatterns = [
     path(
         '',
-        IndexView.as_view(),
-        name='peers_index'
+        PublicView.as_view(),
+        name='peers_public'
     ),
     path(
         'about',
@@ -15,12 +15,12 @@ urlpatterns = [
         name='peers_about'
     ),
     path(
-        '<uuid:channel_id>',
+        'peers/<uuid:channel_id>',
         PeerView.as_view(),
         name='peers_channel'
     ),
     path(
-        '<uuid:channel_id>/session',
+        'peers/<uuid:channel_id>/session',
         SessionView.as_view(),
         name='peers_session'
     ),
