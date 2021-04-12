@@ -15,7 +15,7 @@
           <param name="force-register-domain" value="{{ directory_domain }}"/>
           <param name="userauth" value="true"/>
           <param name="blind-reg" value="false"/>
-          <param name="context" value="{{ dialplan_context }}"/>
+          <param name="context" value="verto"/>
         </profile>
         <profile name="verto6">
           <param name="secure-combined" value="$${certs_dir}/wss.pem"/>
@@ -23,7 +23,7 @@
           <param name="force-register-domain" value="{{ directory_domain }}"/>
           <param name="userauth" value="true"/>
           <param name="blind-reg" value="false"/>
-          <param name="context" value="{{ dialplan_context }}"/>
+          <param name="context" value="verto"/>
         </profile>
       </profiles>
     </configuration>

@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <document type="freeswitch/xml">
   <section name="directory">
-    <domain name="{{ directory_domain }}">
+    <domain name="{{ pbx_hostname }}">
       <user id="{{ user_id }}">
         <params>
-          <param name="jsonrpc-allowed-methods" value="{{ allowed_methods|join:',' }}" />
-          <param name="jsonrpc-allowed-event-channels" value="{{ allowed_event_channels|join:',' }}" />
+          <param name="jsonrpc-allowed-methods" value="echo" />
           <param name="password" value="{{ password }}" />
         </params>
       </user>

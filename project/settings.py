@@ -33,17 +33,15 @@ else:
 
 ADMINS = SETTINGS['ADMINS']
 
-COTURN_LISTENING_PORT = SETTINGS['COTURN_LISTENING_PORT']
-
-FIREWALL_API_PORT = SETTINGS['FIREWALL_API_PORT']
+FIREWALL_PORT = SETTINGS['FIREWALL_PORT']
 
 PBX_HOSTNAME = SETTINGS['PBX_HOSTNAME']
 
 SERVER_EMAIL = SETTINGS['SERVER_EMAIL']
 
-TIME_ZONE = SETTINGS['TIME_ZONE']
+STUN_PORT = SETTINGS['STUN_PORT']
 
-VERTO_PORT = SETTINGS['VERTO_PORT']
+TIME_ZONE = SETTINGS['TIME_ZONE']
 
 
 # Other custom settings
@@ -51,10 +49,6 @@ VERTO_PORT = SETTINGS['VERTO_PORT']
 ALLOWED_HOSTS = (
     PBX_HOSTNAME,
     'localhost',
-)
-
-ALLOWED_ORIGINS = (
-    'https://%s:443' % PBX_HOSTNAME,
 )
 
 CSRF_FAILURE_VIEW = 'common.views.custom403'
@@ -72,13 +66,15 @@ COMMON_PROTECTED_PATHS = common_protected_paths_registry
 
 FSAPI_REQUEST_HANDLERS = fsapi_request_handler_registry
 
-PEERS_CSS = None
-
-PEERS_PEER_JS = None
-
-PEERS_ADAPTER_JS = None
-
 VERTO_AUTH_HANDLERS = verto_auth_handler_registry
+
+VERTO_PORT = SETTINGS['VERTO_PORT']
+
+CONFERENCE_CSS = None
+
+CONFERENCE_CLIENT_JS = None
+
+CONFERENCE_ADAPTER_JS = None
 
 
 # Header and cookie definition
@@ -108,9 +104,9 @@ USE_X_FORWARDED_PORT = True
 INSTALLED_APPS = [
     'django_prometheus',
     'common.apps.CommonConfig',
-    'verto.apps.VertoConfig',
-    'peers.apps.PeersConfig',
     'fsapi.apps.FsapiConfig',
+    'verto.apps.VertoConfig',
+    'conference.apps.ConferenceConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

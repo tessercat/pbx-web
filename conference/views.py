@@ -1,4 +1,4 @@
-""" Peers app views module. """
+""" Conference app views module. """
 from datetime import timedelta
 from uuid import UUID
 from django.conf import settings
@@ -11,68 +11,45 @@ from common.decorators import cache_public
 from verto.models import Channel, Client
 
 
-@method_decorator(cache_public(60 * 15), name='dispatch')
-class AboutView(TemplateView):
-    """ About the peer channels app view. """
-    template_name = 'peers/about.html'
+class IndexView(TemplateView):
+    """ Conference app index view. """
+    template_name = 'conference/index.html'
 
     def get_context_data(self, **kwargs):
         """ Insert data into template context. """
         context = super().get_context_data(**kwargs)
-        context['page_title'] = 'About this site'
+        context['page_title'] = settings.PBX_HOSTNAME
         context['common_css'] = settings.COMMON_CSS
         return context
 
 
-class PeerView(DetailView):
-    """ Peer client channel view. """
+class ClientView(DetailView):
+    """ Conference client channel view. """
     model = Channel
     slug_field = 'channel_id'
     slug_url_kwarg = 'channel_id'
-    template_name = 'peers/peer.html'
+    template_name = 'conference/client.html'
 
     def get_context_data(self, **kwargs):
         """ Insert data into template context. """
         context = super().get_context_data(**kwargs)
         context['page_title'] = context['object'].topic
-        context['peer_css'] = settings.PEERS_CSS
-        context['adapter_js'] = settings.PEERS_ADAPTER_JS
-        context['peer_js'] = settings.PEERS_PEER_JS
+        context['common_css'] = settings.COMMON_CSS
+        context['conference_css'] = settings.CONFERENCE_CSS
+        context['adapter_js'] = settings.CONFERENCE_ADAPTER_JS
+        context['client_js'] = settings.CONFERENCE_CLIENT_JS
         return context
 
     def get_object(self, queryset=None):
         """ Raise 404 when auth realm is not correct. """
         channel = super().get_object()
-        if channel.realm != 'peers':
+        if channel.realm != 'conference':
             raise Http404
         return channel
 
 
-class PublicView(TemplateView):
-    """ Public peer channels view. """
-
-    template_name = 'peers/public.html'
-
-    def get_context_data(self, **kwargs):
-        """ Insert data into template context. """
-        context = super().get_context_data(**kwargs)
-        context['page_title'] = 'Public channels'
-        context['peer_css'] = settings.PEERS_CSS
-        return context
-
-    def public_channels(self):
-        """ Return public channel query set. """
-        # pylint: disable=no-self-use
-        channels = Channel.objects.filter(realm='peers', is_public=True)
-        for channel in channels:
-            channel.url = 'https://%s/%s/%s' % (
-                settings.PBX_HOSTNAME, channel.realm, channel.channel_id
-            )
-        return channels
-
-
 class SessionView(BaseDetailView):
-    """ Peer client session registration view. """
+    """ Conference client session registration view. """
     model = Channel
     slug_field = 'channel_id'
     slug_url_kwarg = 'channel_id'
@@ -113,7 +90,7 @@ class SessionView(BaseDetailView):
     def get_object(self, queryset=None):
         """ Raise 404 when auth realm is not correct. """
         channel = super().get_object()
-        if channel.realm != 'peers':
+        if channel.realm != 'conference':
             raise Http404
         return channel
 

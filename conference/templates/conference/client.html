@@ -1,0 +1,16 @@
+{% extends "common/base.html" %}
+{% load static %}
+
+{% block style %}
+    <link rel="stylesheet" href="{% static 'conference/css/'|add:conference_css %}">
+{% endblock %}
+
+{% block content %}
+    <main>
+      <article>
+        <p class="error">This is the conference client.</p>
+      </article>
+    </main>
+    <script defer src="{% static 'conference/js/'|add:adapter_js %}"></script>
+    <script defer src="{% static 'conference/js/'|add:client_js %}"></script>
+{% endblock %}

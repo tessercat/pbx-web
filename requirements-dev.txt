@@ -4,45 +4,45 @@
 #
 #    pip-compile requirements-dev.in
 #
-asgiref==3.3.1
+asgiref==3.3.4
     # via
     #   daphne
     #   django
-astroid==2.4.2
+astroid==2.5.3
     # via pylint
 attrs==20.3.0
     # via
     #   automat
     #   service-identity
     #   twisted
-autobahn==20.12.3
+autobahn==21.3.1
     # via daphne
 automat==20.2.0
     # via twisted
 certifi==2020.12.5
     # via httpx
-cffi==1.14.4
+cffi==1.14.5
     # via cryptography
 constantly==15.1.0
     # via twisted
-cryptography==3.3.1
+cryptography==3.4.7
     # via
     #   autobahn
     #   pyopenssl
     #   service-identity
-daphne==3.0.1
+daphne==3.0.2
     # via -r requirements-dev.in
 django-prometheus==2.1.0
     # via -r requirements-dev.in
-django==3.1.5
+django==3.2
     # via -r requirements-dev.in
-flake8==3.8.4
+flake8==3.9.0
     # via -r requirements-dev.in
 h11==0.12.0
     # via httpcore
-httpcore==0.12.2
+httpcore==0.12.3
     # via httpx
-httpx==0.16.1
+httpx==0.17.1
     # via -r requirements-dev.in
 hyperlink==21.0.0
     # via
@@ -53,23 +53,23 @@ idna==3.1
     #   hyperlink
     #   rfc3986
     #   twisted
-importlib-metadata==3.4.0
+importlib-metadata==3.10.1
     # via
     #   flake8
     #   markdown
-incremental==17.5.0
+incremental==21.3.0
     # via twisted
-isort==5.7.0
+isort==5.8.0
     # via pylint
-lazy-object-proxy==1.4.3
+lazy-object-proxy==1.6.0
     # via astroid
-markdown==3.3.3
+markdown==3.3.4
     # via -r requirements-dev.in
 mccabe==0.6.1
     # via
     #   flake8
     #   pylint
-prometheus-client==0.9.0
+prometheus-client==0.10.1
     # via django-prometheus
 pyasn1-modules==0.2.8
     # via service-identity
@@ -77,26 +77,24 @@ pyasn1==0.4.8
     # via
     #   pyasn1-modules
     #   service-identity
-pycodestyle==2.6.0
+pycodestyle==2.7.0
     # via flake8
 pycparser==2.20
     # via cffi
-pyflakes==2.2.0
+pyflakes==2.3.1
     # via flake8
-pyhamcrest==2.0.2
-    # via twisted
-pylint-django==2.4.2
+pylint-django==2.4.3
     # via -r requirements-dev.in
 pylint-plugin-utils==0.6
     # via pylint-django
-pylint==2.6.0
+pylint==2.7.4
     # via
     #   -r requirements-dev.in
     #   pylint-django
     #   pylint-plugin-utils
 pyopenssl==20.0.1
     # via twisted
-pytz==2020.5
+pytz==2021.1
     # via django
 rfc3986[idna2008]==1.4.0
     # via httpx
@@ -104,9 +102,7 @@ service-identity==18.1.0
     # via twisted
 six==1.15.0
     # via
-    #   astroid
     #   automat
-    #   cryptography
     #   pyopenssl
 sniffio==1.2.0
     # via
@@ -116,19 +112,21 @@ sqlparse==0.4.1
     # via django
 toml==0.10.2
     # via pylint
-twisted[tls]==20.3.0
+twisted[tls]==21.2.0
     # via daphne
-txaio==20.12.1
+txaio==21.2.1
     # via autobahn
-typed-ast==1.4.2
+typed-ast==1.4.3
     # via astroid
 typing-extensions==3.7.4.3
-    # via importlib-metadata
+    # via
+    #   asgiref
+    #   importlib-metadata
 wrapt==1.12.1
     # via astroid
-zipp==3.4.0
+zipp==3.4.1
     # via importlib-metadata
-zope.interface==5.2.0
+zope.interface==5.3.0
     # via twisted
 
 # The following packages are considered to be unsafe in a requirements file:

@@ -89,7 +89,7 @@ class LoginEventHandler(FsapiHandler):
                 client, request.POST['session_id'], client.session_id
             )
             return template, {'response': 'punt'}
-        # Punt if public channel is full.
+        # Punt if channel is full.
         client.connected = timezone.now()
         client.save()
         return template, {'response': 'ok'}

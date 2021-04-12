@@ -2,4 +2,4 @@
 from common.registries import register_protected_path
 
 
-register_protected_path('fsapi')
+register_protected_path('pbx-fsapi')

@@ -4,5 +4,5 @@ from fsapi import views
 
 
 urlpatterns = [
-    path('', views.FsapiView.as_view(), name='fsapi'),
+    path('', views.FsapiView.as_view(), name='pbx-fsapi'),
 ]

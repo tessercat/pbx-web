@@ -1,0 +1,19 @@
+{% extends "common/base.html" %}
+{% load static %}
+
+{% block style %}
+    <link rel="stylesheet" href="{% static 'common/css/'|add:common_css %}">
+{% endblock %}
+
+{% block content %}
+    <main>
+      <article>
+        <p class="error">
+        This is a private conference server.
+        Use it at your own risk,
+        with no warranty of any kind,
+        express or implied.
+        </p>
+      </article>
+    </main>
+{% endblock %}
