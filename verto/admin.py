@@ -39,13 +39,11 @@ class ChannelAdmin(admin.ModelAdmin):
     fields = (
         'topic',
         'realm',
-        'is_public',
     )
     list_display = (
         'topic',
         'realm',
         'channel_link',
-        'is_public',
         'clients_link',
     )
     search_fields = (

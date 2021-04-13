@@ -19,9 +19,6 @@ class Channel(models.Model):
     topic = models.CharField(
         max_length=100,
     )
-    is_public = models.BooleanField(
-        default=False,
-    )
     realm = models.SlugField()
     # client_set.all();
 
