@@ -8,11 +8,11 @@ from verto.models import Client
 from fsapi.registries import FsapiHandler, register_fsapi_handlers
 
 
-class ProfileHandler(FsapiHandler):
+class VertoProfileHandler(FsapiHandler):
     """ Verto profile config request handler. """
 
     def __init__(self):
-        super(ProfileHandler, self).__init__(
+        super().__init__(
             key_value='verto.conf',
             section='configuration',
         )
@@ -28,11 +28,11 @@ class ProfileHandler(FsapiHandler):
         return template, context
 
 
-class AuthHandler(FsapiHandler):
+class VertoAuthHandler(FsapiHandler):
     """ Client auth request handler. """
 
     def __init__(self):
-        super(AuthHandler, self).__init__(
+        super().__init__(
             action='jsonrpc-authenticate',
             domain=settings.PBX_HOSTNAME,
             section='directory',
@@ -43,8 +43,8 @@ class AuthHandler(FsapiHandler):
         from the auth registry. """
         try:
             UUID(request.POST['user'], version=4)
-        except ValueError:
-            raise Http404
+        except ValueError as err:
+            raise Http404 from err
         client = get_object_or_404(Client, client_id=request.POST['user'])
         auth_handler = settings.VERTO_AUTH_HANDLERS.registry.get(
             client.channel.realm
@@ -57,11 +57,11 @@ class AuthHandler(FsapiHandler):
         raise Http404
 
 
-class LoginEventHandler(FsapiHandler):
+class VertoLoginEventHandler(FsapiHandler):
     """ Handle verto client login events. """
 
     def __init__(self):
-        super(LoginEventHandler, self).__init__(
+        super().__init__(
             action='verto_client_login',
         )
 
@@ -95,11 +95,11 @@ class LoginEventHandler(FsapiHandler):
         return template, {'response': 'ok'}
 
 
-class DisconnectEventHandler(FsapiHandler):
+class VertoDisconnectEventHandler(FsapiHandler):
     """ Handle verto client disconnect events. """
 
     def __init__(self):
-        super(DisconnectEventHandler, self).__init__(
+        super().__init__(
             action='verto_client_disconnect',
         )
 
@@ -110,8 +110,8 @@ class DisconnectEventHandler(FsapiHandler):
         client_id = request.POST['client_id'].split('@')[0]
         try:
             UUID(client_id, version=4)
-        except ValueError:
-            raise Http404
+        except ValueError as err:
+            raise Http404 from err
         client = get_object_or_404(Client, client_id=client_id)
         template = 'verto/verto.event.txt'
         client.connected = None
@@ -120,8 +120,8 @@ class DisconnectEventHandler(FsapiHandler):
 
 
 register_fsapi_handlers(
-    AuthHandler(),
-    ProfileHandler(),
-    LoginEventHandler(),
-    DisconnectEventHandler(),
+    VertoAuthHandler(),
+    VertoProfileHandler(),
+    VertoLoginEventHandler(),
+    VertoDisconnectEventHandler(),
 )

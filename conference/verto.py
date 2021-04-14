@@ -17,4 +17,6 @@ class ConferenceAuthHandler(AuthHandler):
         return template, context
 
 
-register_verto_auth_handler('conference', ConferenceAuthHandler())
+register_verto_auth_handler(
+    settings.CONFERENCE_AUTH_REALM, ConferenceAuthHandler()
+)

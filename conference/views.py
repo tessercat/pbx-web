@@ -4,10 +4,8 @@ from uuid import UUID
 from django.conf import settings
 from django.http import Http404, HttpResponseForbidden, JsonResponse
 from django.utils import timezone
-from django.utils.decorators import method_decorator
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import BaseDetailView, DetailView
-from common.decorators import cache_public
 from verto.models import Channel, Client
 
 
@@ -43,7 +41,7 @@ class ClientView(DetailView):
     def get_object(self, queryset=None):
         """ Raise 404 when auth realm is not correct. """
         channel = super().get_object()
-        if channel.realm != 'conference':
+        if channel.realm != settings.CONFERENCE_AUTH_REALM:
             raise Http404
         return channel
 
@@ -90,7 +88,7 @@ class SessionView(BaseDetailView):
     def get_object(self, queryset=None):
         """ Raise 404 when auth realm is not correct. """
         channel = super().get_object()
-        if channel.realm != 'conference':
+        if channel.realm != settings.CONFERENCE_AUTH_REALM:
             raise Http404
         return channel
 
