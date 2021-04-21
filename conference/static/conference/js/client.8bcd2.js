@@ -121,21 +121,23 @@ class ConferenceClient {
     this.localMedia.onStart = this._onMediaStart.bind(this);
 
     this.peer = new _verto_peer_js__WEBPACK_IMPORTED_MODULE_3__["default"]();
-    this.peer.onBundleReady = this._onPeerReady.bind(this);
+    this.peer.onBundleReady = this._onBundleReady.bind(this);
     this.peer.onRemoteTrack = this._onPeerTrack.bind(this);
 
-    this.callID = this.client.newUuid();
+    this.callID = null;
     this.remoteSdp = null;
   }
 
   open() {
     this.client.open();
+    this.peer.init(false);
   }
 
   close() {
     this.peer.close();
     this.localMedia.stop();
     this.client.close();
+    this.callID = null;
   }
 
   // Verto client callbacks
@@ -165,6 +167,9 @@ class ConferenceClient {
         this.peer.setRemoteDescription('answer', this.remoteSdp);
         this.remoteSdp = null;
       }
+    } else if (event.method === 'verto.attach') {
+      this.callID = event.params.callID;
+      this.peer.setRemoteDescription('offer', event.params.sdp);
     } else if (event.method === 'verto.clientReady') {
       _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].info('conference', 'Client ready');
     } else if (event.method === 'verto.media') {
@@ -177,26 +182,30 @@ class ConferenceClient {
   // Local media callbacks
 
   _onMediaStart(stream) {
-    this.peer.connect(false);
     this.peer.addTracks(stream);
   }
 
   // Verto peer callbacks
 
-  _onPeerReady(sdpData) {
+  _onBundleReady(sdpData) {
     const onSuccess = (message) => {
-      _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].info('conference', message.result.callID);
+      _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].info('conference', 'Bundle sent', message.result);
     }
     const onError = (error) => {
       _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].error('conference', 'Invite failed', error);
     }
-    const dest = this.client.channelId;
-    _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('client', 'Invite', dest);
-    this.client.sendRequest('verto.invite', {
+    let method = null;
+    if (this.callID) {
+      method = 'verto.attach'
+    } else {
+      this.callID = this.client.newUuid();
+      method = 'verto.invite'
+    }
+    this.client.sendRequest(method, {
       sdp: sdpData,
       dialogParams: {
         callID: this.callID,
-        destination_number: dest,
+        destination_number: this.client.channelId,
         //screenShare: true,
         //dedEnc: true,
         //mirrorInput: true,
@@ -763,6 +772,7 @@ class VertoClient {
         this.onPunt();
       }
     } else {
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Event', event);
       if (this.onEvent) {
         this.onEvent(event);
       }
@@ -808,9 +818,9 @@ class VertoPeer {
     this.onRemoteTrack = null;
   }
 
-  connect(isPolite) {
+  init(isPolite) {
     if (!this.pc) {
-      this.pc = this._getConnection();
+      this.pc = this._newConnection();
       this.isPolite = isPolite;
       this.isOffering = false;
       this.isIgnoringOffers = false;
@@ -831,7 +841,7 @@ class VertoPeer {
     }
   }
 
-  _getConnection() {
+  _newConnection() {
     const config = {
       iceServers: [
         {
@@ -862,7 +872,7 @@ class VertoPeer {
     pc.onicegatheringstatechange = async () => {
       if (pc.iceGatheringState === 'complete' && pc.localDescription) {
         const sdp = pc.localDescription.toJSON();
-        _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('peer', 'Ready', sdp)
+        _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('peer', 'Bundle ready', sdp)
         if (this.onBundleReady) {
           this.onBundleReady(sdp.sdp);
         }

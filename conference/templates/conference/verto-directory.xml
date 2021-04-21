@@ -4,7 +4,7 @@
     <domain name="{{ pbx_hostname }}">
       <user id="{{ user_id }}">
         <params>
-          <param name="jsonrpc-allowed-methods" value="echo,verto.invite" />
+          <param name="jsonrpc-allowed-methods" value="echo,verto.invite,verto.attach" />
           <param name="password" value="{{ password }}" />
         </params>
       </user>
