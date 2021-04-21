@@ -42,7 +42,7 @@ class ClientView(DetailView):
     def get_object(self, queryset=None):
         """ Raise 404 when auth realm is not correct. """
         channel = super().get_object()
-        if channel.realm != settings.CONFERENCE_AUTH_REALM:
+        if channel.realm != settings.CONFERENCE_REALM:
             raise Http404
         return channel
 
@@ -89,7 +89,7 @@ class SessionView(BaseDetailView):
     def get_object(self, queryset=None):
         """ Raise 404 when auth realm is not correct. """
         channel = super().get_object()
-        if channel.realm != settings.CONFERENCE_AUTH_REALM:
+        if channel.realm != settings.CONFERENCE_REALM:
             raise Http404
         return channel
 

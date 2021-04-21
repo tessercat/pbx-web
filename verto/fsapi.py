@@ -5,7 +5,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from verto.models import Client
-from fsapi.registries import FsapiHandler, register_fsapi_handlers
+from fsapi.registries import FsapiHandler, register_fsapi_handler
 
 
 class VertoProfileHandler(FsapiHandler):
@@ -49,7 +49,7 @@ class VertoLoginEventHandler(FsapiHandler):
         it against the expected value will catch the error since the
         Client model enforces UUID session_id.
         """
-        template = 'verto/verto.event.txt'
+        template = 'verto/verto-event.txt'
         client = Client.objects.get(client_id=request.POST['client_id'])
         if str(client.session_id) != request.POST['session_id']:
             self.admin_logger.error(
@@ -78,20 +78,18 @@ class VertoDisconnectEventHandler(FsapiHandler):
         """ Process verto client disconnect events and return "ok". If a
         client for the login username (client_id) is found, unset the
         client's connected timestamp. """
+        template = 'verto/verto-event.txt'
         client_id = request.POST['client_id'].split('@')[0]
         try:
             UUID(client_id, version=4)
         except ValueError as err:
             raise Http404 from err
         client = get_object_or_404(Client, client_id=client_id)
-        template = 'verto/verto.event.txt'
         client.connected = None
         client.save()
         return template, {'response': 'ok'}
 
 
-register_fsapi_handlers(
-    VertoProfileHandler(),
-    VertoLoginEventHandler(),
-    VertoDisconnectEventHandler(),
-)
+register_fsapi_handler(VertoProfileHandler())
+register_fsapi_handler(VertoLoginEventHandler())
+register_fsapi_handler(VertoDisconnectEventHandler())

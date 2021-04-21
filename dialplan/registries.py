@@ -1,12 +1,11 @@
 """ Dialplan registries module. """
 import logging
+from fsapi.registries import Handler
 
 
-class DialplanHandler:
+class DialplanHandler(Handler):
     """ Dialplan handler abstract class. """
     # pylint: disable=too-few-public-methods
-
-    logger = logging.getLogger('django.server')
 
     def process(self, request):
         """ Process request and raise django.http.Http404 or ValueError

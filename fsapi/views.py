@@ -33,14 +33,11 @@ class FsapiView(View):
         """ Handle API requests. """
         # pylint: disable=unused-argument
         request.custom404 = custom404
-        try:
-            for handler in settings.FSAPI_REQUEST_HANDLERS.registry:
-                if handler.matches(request):
-                    logging.getLogger('django.server').info(
-                        'Processing %s', handler.__class__.__name__
-                    )
-                    template, context = handler.process(request)
-                    return HttpResponse(render(request, template, context))
-            raise Http404
-        except (KeyError, ValueError) as err:
-            raise SuspiciousOperation from err
+        for handler in settings.FSAPI_REQUEST_HANDLERS.registry:
+            if handler.matches(request):
+                logging.getLogger('django.server').info(
+                    'Processing %s', handler.__class__.__name__
+                )
+                template, context = handler.process(request)
+                return HttpResponse(render(request, template, context))
+        raise Http404

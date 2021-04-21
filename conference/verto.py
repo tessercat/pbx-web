@@ -23,7 +23,7 @@ class ConferenceVertoDirectoryHandler(VertoDirectoryHandler):
 
 
 register_verto_directory_handler(
-    settings.CONFERENCE_AUTH_REALM,
+    settings.CONFERENCE_REALM,
     ConferenceVertoDirectoryHandler()
 )
 
@@ -42,6 +42,6 @@ class ConferenceVertoDialplanHandler(VertoDialplanHandler):
 
 
 register_verto_dialplan_handler(
-    settings.CONFERENCE_AUTH_REALM,
+    settings.CONFERENCE_REALM,
     ConferenceVertoDialplanHandler()
 )

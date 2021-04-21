@@ -91,7 +91,7 @@ CONFERENCE_CLIENT_JS = None
 
 CONFERENCE_ADAPTER_JS = None
 
-CONFERENCE_AUTH_REALM = 'c'
+CONFERENCE_REALM = 'c'
 
 
 # Header and cookie definition

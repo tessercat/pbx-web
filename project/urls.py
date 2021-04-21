@@ -17,6 +17,6 @@ urlpatterns = [
     path('', include('django_prometheus.urls')),
     path('', IndexView.as_view(), name='pbx-conference-index'),
     path('fsapi', include('fsapi.urls')),
-    path('%s/' % settings.CONFERENCE_AUTH_REALM, include('conference.urls')),
+    path('%s/' % settings.CONFERENCE_REALM, include('conference.urls')),
     path('admin/', admin.site.urls),
 ]

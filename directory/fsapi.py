@@ -1,11 +1,11 @@
 """ Directory request handler module. """
 from django.conf import settings
 from django.http import Http404
-from fsapi.registries import FsapiHandler, register_fsapi_handlers
+from fsapi.registries import FsapiHandler, register_fsapi_handler
 
 
-class DirectoryHandler(FsapiHandler):
-    """ Directory request handler. """
+class DirectoryFsapiHandler(FsapiHandler):
+    """ Handler for all directory requests. Pass requests to sub-handlers. """
 
     def __init__(self):
         super().__init__(
@@ -14,14 +14,15 @@ class DirectoryHandler(FsapiHandler):
         )
 
     def process(self, request):
-        """ Process directory requests with handlers in the registry until
-        a match is found or there are no more registered handlers. """
+        """ Process registry handlers until a sub-handler doesn't raise 404
+        or until there are no more handlers to try. """
         for handler in settings.DIRECTORY_HANDLERS.registry:
             self.logger.info('Processing %s', handler.__class__.__name__)
-            return handler.process(request)
+            try:
+                return handler.process(request)
+            except Http404:
+                continue
         raise Http404
 
 
-register_fsapi_handlers(
-    DirectoryHandler(),
-)
+register_fsapi_handler(DirectoryFsapiHandler())

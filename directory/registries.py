@@ -1,18 +1,14 @@
 """ Directory registries module. """
 import logging
+from fsapi.registries import Handler
 
 
-class DirectoryHandler:
-    """ Directory handler abstract class. Apps that handle directory
-    requests add custom handlers in the app's directory module. """
+class DirectoryHandler(Handler):
+    """ Directory handler abstract class. """
     # pylint: disable=too-few-public-methods
 
-    logger = logging.getLogger('django.server')
-
     def process(self, request):
-        """ Process request and raise django.http.Http404 or ValueError
-        if request POST can't be processed, or return a tuple of template
-        and context if it can. """
+        """ Return a tuple of template and context. """
         raise NotImplementedError
 
 

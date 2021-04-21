@@ -15,7 +15,7 @@ class VertoDialplanHandler(DialplanHandler):
         """ Process verto dialplan requests. """
         try:
             UUID(request.POST['variable_user_name'], version=4)
-        except ValueError as err:
+        except (KeyError, ValueError) as err:
             raise Http404 from err
         client = get_object_or_404(
             Client, client_id=request.POST['variable_user_name']

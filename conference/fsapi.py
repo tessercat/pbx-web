@@ -1,6 +1,6 @@
 """ Conference app fsapi request handler module. """
 from django.conf import settings
-from fsapi.registries import FsapiHandler, register_fsapi_handlers
+from fsapi.registries import FsapiHandler, register_fsapi_handler
 
 
 class ConferenceConfigHandler(FsapiHandler):
@@ -21,6 +21,4 @@ class ConferenceConfigHandler(FsapiHandler):
         return template, context
 
 
-register_fsapi_handlers(
-    ConferenceConfigHandler(),
-)
+register_fsapi_handler(ConferenceConfigHandler())

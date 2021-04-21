@@ -1,17 +1,14 @@
 """ Verto request handler registries module. """
 import logging
+from fsapi.registries import Handler
 
 
-class VertoDirectoryHandler:
+class VertoDirectoryHandler(Handler):
     """ Verto directory handler abstract class. """
     # pylint: disable=too-few-public-methods
 
-    logger = logging.getLogger('django.server')
-
     def process(self, request, client):
-        """ Process request and client and raise django.http.Http404
-        or ValueError if request POST and client data can't be processed,
-        or return a tuple of template and context if it can. """
+        """ Return a tuple of template and context. """
         raise NotImplementedError
 
 
@@ -23,7 +20,6 @@ class _DirectoryHandlerRegistry:
     registry = _registry
 
 
-# settings.VERTO_DIRECTORY_HANDLERS
 verto_directory_handler_registry = _DirectoryHandlerRegistry()
 
 
@@ -35,16 +31,12 @@ def register_verto_directory_handler(realm, handler):
     )
 
 
-class VertoDialplanHandler:
+class VertoDialplanHandler(Handler):
     """ Verto dialplan handler abstract class. """
     # pylint: disable=too-few-public-methods
 
-    logger = logging.getLogger('django.server')
-
     def process(self, request, client):
-        """ Process request and client and raise django.http.Http404
-        or ValueError if request POST and client data can't be processed,
-        or return a tuple of template and context if it can. """
+        """ Return a tuple of template and context. """
         raise NotImplementedError
 
 
@@ -56,7 +48,6 @@ class _DialplanHandlerRegistry:
     registry = _registry
 
 
-# settings.VERTO_DIALPLAN_HANDLERS
 verto_dialplan_handler_registry = _DialplanHandlerRegistry()
 
 
