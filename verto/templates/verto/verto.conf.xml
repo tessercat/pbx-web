@@ -6,7 +6,7 @@
         <param name="debug" value="{{ debug_level }}"/>
         <param name="enable-fs-events" value="false"/>
         <param name="enable-presence" value="false"/>
-        <!-- <param name="detach-timeout-sec" value="120"/> -->
+        <param name="detach-timeout-sec" value="10"/>
       </settings>
       <profiles>
         <profile name="verto4">

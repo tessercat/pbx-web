@@ -4,8 +4,8 @@
     <context name="verto">
       <extension name="Conference">
         <condition regex="all">
-          <regex field="destination_number" expression="^1234$"/>
-          <action application="log" data="INFO ***** Verto WebRTC Call ***** "/>
+          <regex field="destination_number" expression="^{{ dest }}$"/>
+          <action application="conference" data="{{ confname }}"/>
         </condition>
       </extension>
     </context>

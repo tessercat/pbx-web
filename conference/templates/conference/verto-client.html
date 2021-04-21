@@ -7,9 +7,10 @@
 
 {% block content %}
     <main>
-      <article>
-        <p class="error">This is the conference client.</p>
-      </article>
+      <noscript>
+        <p class="error">Enable JavaScript to use this service.</p>
+      </noscript>
+      <input type="hidden" id="stun-port" name="stun-port" value="{{ stun_port }}">
     </main>
     <script defer src="{% static 'conference/js/'|add:adapter_js %}"></script>
     <script defer src="{% static 'conference/js/'|add:client_js %}"></script>

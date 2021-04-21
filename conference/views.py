@@ -26,7 +26,7 @@ class ClientView(DetailView):
     model = Channel
     slug_field = 'channel_id'
     slug_url_kwarg = 'channel_id'
-    template_name = 'conference/client.html'
+    template_name = 'conference/verto-client.html'
 
     def get_context_data(self, **kwargs):
         """ Insert data into template context. """
@@ -36,6 +36,7 @@ class ClientView(DetailView):
         context['conference_css'] = settings.CONFERENCE_CSS
         context['adapter_js'] = settings.CONFERENCE_ADAPTER_JS
         context['client_js'] = settings.CONFERENCE_CLIENT_JS
+        context['stun_port'] = settings.STUN_PORT
         return context
 
     def get_object(self, queryset=None):

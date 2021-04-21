@@ -1,6 +1,7 @@
 """ Common app config module. """
 from fnmatch import fnmatch
 import os
+import sys
 from django.apps import AppConfig
 from django.utils.module_loading import autodiscover_modules
 from common.registries import common_protected_paths_registry
@@ -11,7 +12,10 @@ class CommonConfig(AppConfig):
     name = 'common'
 
     def ready(self):
-        """ Populated paths registry and configure CSS file. """
+        """ Init app on ready. """
+        # pylint: disable=import-outside-toplevel
+        import logging
+        from django.conf import settings
 
         # Autodiscover protected paths configuration.
         autodiscover_modules(
@@ -19,10 +23,6 @@ class CommonConfig(AppConfig):
         )
 
         # Configure common CSS file.
-        # pylint: disable=import-outside-toplevel
-        import logging
-        from django.conf import settings
-
         pattern = 'common.?????.css'
         app_dir = os.path.join(
             settings.BASE_DIR, 'common', 'static', 'common', 'css'
@@ -34,3 +34,13 @@ class CommonConfig(AppConfig):
                 logging.getLogger('django.server').info(
                     'Configured COMMON_CSS %s', filename
                 )
+
+        # Open RTP ports.
+        if sys.argv[-1] == 'project.asgi:application':
+            from common import firewall
+
+            firewall.accept(
+                'udp',
+                settings.RTP_PORT_START,
+                settings.RTP_PORT_END,
+            )

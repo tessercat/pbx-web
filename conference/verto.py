@@ -13,7 +13,7 @@ class ConferenceVertoDirectoryHandler(VertoDirectoryHandler):
     # pylint: disable=too-few-public-methods
 
     def process(self, request, client):
-        template = 'conference/directory.xml'
+        template = 'conference/verto-directory.xml'
         context = {
             'pbx_hostname': settings.PBX_HOSTNAME,
             'user_id': client.client_id,
@@ -33,11 +33,10 @@ class ConferenceVertoDialplanHandler(VertoDialplanHandler):
     # pylint: disable=too-few-public-methods
 
     def process(self, request, client):
-        template = 'conference/dialplan.xml'
+        template = 'conference/verto-dialplan.xml'
         context = {
-            'pbx_hostname': settings.PBX_HOSTNAME,
-            'user_id': client.client_id,
-            'password': client.password,
+            'dest': client.channel.channel_id,
+            'confname': client.channel.channel_id,
         }
         return template, context
 
