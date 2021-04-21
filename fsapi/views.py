@@ -37,10 +37,10 @@ class FsapiView(View):
             for handler in settings.FSAPI_REQUEST_HANDLERS.registry:
                 if handler.matches(request):
                     logging.getLogger('django.server').info(
-                        'Processing %s.', handler.__class__.__name__
+                        'Processing %s', handler.__class__.__name__
                     )
                     template, context = handler.process(request)
                     return HttpResponse(render(request, template, context))
             raise Http404
         except (KeyError, ValueError) as err:
-            raise SuspiciousOperation(str(err))
+            raise SuspiciousOperation from err

@@ -3,8 +3,13 @@ import ast
 import os
 import random
 from common.registries import common_protected_paths_registry
-from fsapi.registries import fsapi_request_handler_registry
-from verto.registries import verto_auth_handler_registry
+from fsapi.registries import fsapi_handler_registry
+from dialplan.registries import dialplan_handler_registry
+from directory.registries import directory_handler_registry
+from verto.registries import (
+    verto_dialplan_handler_registry,
+    verto_directory_handler_registry
+)
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -64,9 +69,15 @@ COMMON_CSS = None
 
 COMMON_PROTECTED_PATHS = common_protected_paths_registry
 
-FSAPI_REQUEST_HANDLERS = fsapi_request_handler_registry
+FSAPI_REQUEST_HANDLERS = fsapi_handler_registry
 
-VERTO_AUTH_HANDLERS = verto_auth_handler_registry
+DIRECTORY_HANDLERS = directory_handler_registry
+
+DIALPLAN_HANDLERS = dialplan_handler_registry
+
+VERTO_DIRECTORY_HANDLERS = verto_directory_handler_registry
+
+VERTO_DIALPLAN_HANDLERS = verto_dialplan_handler_registry
 
 VERTO_PORT = SETTINGS['VERTO_PORT']
 
@@ -107,6 +118,8 @@ INSTALLED_APPS = [
     'django_prometheus',
     'common.apps.CommonConfig',
     'fsapi.apps.FsapiConfig',
+    'directory.apps.DirectoryConfig',
+    'dialplan.apps.DialplanConfig',
     'verto.apps.VertoConfig',
     'conference.apps.ConferenceConfig',
     'django.contrib.admin',

@@ -96,19 +96,54 @@
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return ConferenceClient; });
-/* harmony import */ var _verto_client_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../verto/client.js */ "./src/js/verto/client.js");
+/* harmony import */ var _logger_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../logger.js */ "./src/js/logger.js");
+/* harmony import */ var _local_media_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../local-media.js */ "./src/js/local-media.js");
+/* harmony import */ var _verto_client_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../verto/client.js */ "./src/js/verto/client.js");
+/* harmony import */ var _verto_peer_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../verto/peer.js */ "./src/js/verto/peer.js");
 /*
  * Copyright (c) 2021 Peter Christensen. All Rights Reserved.
  * CC BY-NC-ND 4.0.
  */
 
-//import logger from '../logger.js';
+
+
+
+
+class Dialog {
+
+  constructor() {
+    this.offer = null;
+    this.candidates = [];
+    this.state = 'new';
+  }
+
+  addCandidate(candidate) {
+    this.candidates.push(`a=${candidate}`);
+  }
+
+  sendInvite() {
+    this.state = 'old';
+    const sdp = this.offer.sdp + this.candidates.join('\r\n') + '\r\n';
+    this.offer.sdp = sdp;
+    _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].info('conference', this.offer);
+  }
+}
 
 class ConferenceClient {
 
   constructor() {
-    this.client = new _verto_client_js__WEBPACK_IMPORTED_MODULE_0__["default"]();
-    this.client.getSessionData = this._getSessionData.bind(this)
+    this.client = new _verto_client_js__WEBPACK_IMPORTED_MODULE_2__["default"]();
+    this.client.getSessionData = this._getSessionData.bind(this);
+    this.client.onLogin = this._startMedia.bind(this);
+
+    this.localMedia = new _local_media_js__WEBPACK_IMPORTED_MODULE_1__["default"]();
+    this.localMedia.onStart = this._onMediaStart.bind(this);
+
+    this.peer = new _verto_peer_js__WEBPACK_IMPORTED_MODULE_3__["default"]();
+    this.peer.onBundleReady = this._onPeerReady.bind(this);
+    this.peer.onRemoteTrack = this._onPeerTrack.bind(this);
+
+    this.dialog = new Dialog();
   }
 
   open() {
@@ -116,6 +151,8 @@ class ConferenceClient {
   }
 
   close() {
+    this.peer.close();
+    this.localMedia.stop();
     this.client.close();
   }
 
@@ -132,6 +169,31 @@ class ConferenceClient {
     }).catch(error => {
       onError(error);
     });
+  }
+
+  // Local media callbacks
+
+  _startMedia() {
+    this.localMedia.start();
+  }
+
+  _onMediaStart(stream) {
+    this.peer.connect(false);
+    this.peer.addTracks(stream);
+  }
+
+  // RTC peer callbacks
+
+  _onPeerReady(sdpData) {
+    const onSuccess = (message) => {
+      const callID = message.result.callID;
+      _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].info('conference', callID);
+    }
+    this.client.sendInvite('1234', sdpData, onSuccess);
+  }
+
+  _onPeerTrack(track) {
+    _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].info('conference', track);
   }
 }
 
@@ -157,8 +219,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-document.debugLogEnabled = false;
-document.vertoLogEnabled = true;
+document.debugLogEnabled = true;
 document.infoLogEnabled = true;
 
 if (webrtc_adapter__WEBPACK_IMPORTED_MODULE_0___default.a.browserDetails.browser.startsWith("Not")) {
@@ -182,6 +243,133 @@ if (webrtc_adapter__WEBPACK_IMPORTED_MODULE_0___default.a.browserDetails.browser
 
 /***/ }),
 
+/***/ "./src/js/local-media.js":
+/*!*******************************!*\
+  !*** ./src/js/local-media.js ***!
+  \*******************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return LocalMedia; });
+/* harmony import */ var _logger_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./logger.js */ "./src/js/logger.js");
+/*
+ * Copyright (c) 2020 Peter Christensen. All Rights Reserved.
+ * CC BY-NC-ND 4.0.
+ */
+
+
+class LocalMedia {
+
+  constructor() {
+    this.stream = null;
+    this.isStarting = false;
+
+    // Event handlers
+    this.onStart = null;
+    this.onStop = null;
+    this.onStartError = null;
+  }
+
+  start() {
+    const onSuccess = (stream) => {
+      if (!this.isStarting) {
+
+        /*
+         * This runs when stop is called before getUserMedia returns.
+         *
+         * In September of 2020, there must be some kind of race condition
+         * in Android Chromium (Android 10 Chrome, Android 6 Vivaldi)
+         * when media stream tracks are stopped too soon after starting.
+         *
+         * Tracks are live before they're stopped, and ended after,
+         * but stopping them so soon after starting must leave a reference
+         * behind somewhere, because the browser shows media devices
+         * as active, even after stream tracks close.
+         *
+         * A slight pause before stopping tracks seems to take care
+         * of the problem.
+         *
+         * I haven't seen this in Firefox, Chromium or Vivaldi on Linux,
+         * so I assume it's Android only.
+         */
+
+        const sleep = () => new Promise((resolve) => setTimeout(resolve, 500));
+        sleep().then(() => {
+          this._stopStream(stream);
+        });
+      } else {
+        this.isStarting = false;
+        this.stream = stream;
+      }
+    }
+    const onError = (error) => {
+      this.isStarting = false;
+      _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].error('media', error);
+      if (this.onStartError) {
+        this.onStartError(error);
+      }
+    }
+    if (!this.stream && !this.isStarting) {
+      this.isStarting = true;
+      this._initStream(onSuccess, onError);
+    }
+  }
+
+  stop() {
+    this.isStarting = false;
+    this._stopStream(this.stream);
+    this.stream = null;
+  }
+
+  async _initStream(onSuccess, onError) {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      let hasAudio = false;
+      let hasVideo = false;
+      for (const device of devices) {
+        if (device.kind.startsWith('audio')) {
+          _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('media', 'Found audio device');
+          hasAudio = true;
+        } else if (device.kind.startsWith('video')) {
+          _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('media', 'Found video device');
+          hasVideo = true;
+        }
+      }
+      if (!hasAudio) {
+        throw new Error('No audio devices.');
+      }
+      if (!hasVideo) {
+        throw new Error('No video devices.');
+      }
+      const contraints = {audio: true, video: true};
+      const stream = await navigator.mediaDevices.getUserMedia(contraints);
+      if (this.onStart) {
+        this.onStart(stream);
+      }
+      onSuccess(stream);
+    } catch (error) {
+      onError(error);
+    }
+  }
+
+  _stopStream(stream) {
+    if (stream) {
+      for (const track of stream.getTracks()) {
+        track.stop();
+        _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('media', 'Stopped', track.kind, 'track');
+      }
+      if (this.onStop) {
+        this.onStop(stream);
+      }
+    }
+  }
+}
+
+
+/***/ }),
+
 /***/ "./src/js/logger.js":
 /*!**************************!*\
   !*** ./src/js/logger.js ***!
@@ -195,28 +383,23 @@ __webpack_require__.r(__webpack_exports__);
  *  Copyright (c) 2020 Peter Christensen. All Rights Reserved.
  *  CC BY-NC-ND 4.0.
  */
-function logPrefix() {
-  return `[pbx-client ${new Date().toLocaleTimeString()}]`;
+function _getPrefix(prefix) {
+  return `[${prefix} ${new Date().toLocaleTimeString()}]`;
 }
 
 let logger = {
-  debug: (...args) => {
+  debug: (prefix, ...args) => {
     if (document.debugLogEnabled) {
-      console.debug(logPrefix(), ...args);
+      console.debug(_getPrefix(prefix), ...args);
     }
   },
-  verto: (...args) => {
-    if (document.vertoLogEnabled) {
-      console.log(logPrefix(), ...args);
-    }
-  },
-  info: (...args) => {
+  info: (prefix, ...args) => {
     if (document.infoLogEnabled) {
-      console.log(logPrefix(), ...args);
+      console.log(_getPrefix(prefix), ...args);
     }
   },
-  error: (...args) => {
-    console.error(logPrefix(), ...args);
+  error: (prefix, ...args) => {
+    console.error(_getPrefix(prefix), ...args);
   }
 }
 /* harmony default export */ __webpack_exports__["default"] = (logger);
@@ -244,8 +427,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 const CONST = {
-  uuidRegExp: new RegExp(/[-0-9a-f]{36}/, 'i'),
   authRequired: -32000,
+  uuidRegExp: new RegExp(/[-0-9a-f]{36}/, 'i'),
 }
 
 class VertoRequest {
@@ -317,26 +500,25 @@ class VertoClient {
 
   subscribe() {
     const onSuccess = () => {
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Subscribed');
       if (this.onSub) {
         this.onSub();
-      } else {
-        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].verto('Subscribed');
       }
     }
     const onError = (error) => {
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('client', 'Subscription error', error);
       if (this.onSubError) {
         this.onSubError(error);
-      } else {
-        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('Subscription error', error);
       }
     }
+    _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Subscribe');
     this._sendRequest('verto.subscribe', {
       eventChannel: this.channelId
     }, onSuccess, onError);
   }
 
   publish(eventData, onSuccess, onError) {
-    _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].verto('Publishing event', eventData);
+    _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Publish', eventData);
     const encoded = this._encode(eventData);
     if (encoded) {
       const onRequestSuccess = (message) => {
@@ -344,13 +526,12 @@ class VertoClient {
           if (onError) {
             onError(message);
           } else {
-            _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('Publish event error', message);
+            _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('client', 'Publish error', message);
           }
         } else {
+          _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Published', message)
           if (onSuccess) {
             onSuccess(message);
-          } else {
-            _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].verto('Published event', message)
           }
         }
       }
@@ -360,48 +541,51 @@ class VertoClient {
         eventData: encoded,
       }, onRequestSuccess, onError);
     } else {
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('client', 'Publish encoding error', eventData);
       if (onError) {
-        onError('Encoding error');
-      } else {
-        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('Encoding error', eventData);
+        onError(eventData);
       }
     }
   }
 
-  sendMessage(clientId, msgData, onSuccess, onError) {
-    _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].verto('Sending message', clientId, msgData);
-    const encoded = this._encode(msgData);
-    if (encoded) {
-      this._sendRequest('verto.info', {
-        msg: {
-          to: clientId,
-          body: encoded
-        }
-      }, onSuccess, onError);
-    } else {
-      if (onError) {
-        onError(msgData);
+  sendInvite(dest, sdpData, onSuccess, onError) {
+    _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Invite', dest);
+    const callID = this._getUuid();
+    this._sendRequest('verto.invite', {
+      sdp: sdpData,
+      dialogParams: {
+        callID: callID,
+        destination_number: dest,
+        //screenShare: true,
+        //dedEnc: true,
+        //mirrorInput: true,
+        //conferenceCanvasID: <int>,
+        //outgoingBandwidth: <bw-str>,
+        //incomingBandwidth: <bw-str>,
+        //userVariables: {},
+        //caller_id_name: <str>,
+        //remote_caller_id_number: <str>,
+        //remote_caller_id_name: <str>,
+        //ani: <str>,
+        //aniii: <str>,
+        //rdnis: <str>,
       }
-    }
+    }, onSuccess, onError);
   }
 
   // Verto socket event handlers
-
-  _validateUuid() {
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-  }
 
   _onSocketOpen() {
     let allowRetry = true;
     const onSuccess = (sessionData) => {
       if (sessionData.sessionId !== this._getSessionId()) {
-        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('Bad sessionId');
+        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('client', 'Bad sessionId', sessionData);
         this.close();
       } else if (!CONST.uuidRegExp.test(sessionData.clientId)) {
-        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('Bad clientId');
+        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('client', 'Bad clientId', sessionData);
         this.close();
       } else if (!CONST.uuidRegExp.test(sessionData.password)) {
-        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('Bad password');
+        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('client', 'Bad password', sessionData);
         this.close();
       } else {
         this.sessionData = sessionData;
@@ -410,38 +594,34 @@ class VertoClient {
     }
     const onError = (error) => {
       if (allowRetry && error.message === '404') {
-        allowRetry = false; // allow one retry with new sessionId on 404.
+        allowRetry = false; // allow one retry with new sessionId on 404
         this.getSessionData(this._getSessionId(true), onSuccess, onError);
       } else {
-        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error(error);
+        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('client', error);
         this.close();
       }
     }
+    _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Socket open');
     this._resetClientState();
     this.getSessionData(this._getSessionId(), onSuccess, onError);
     if (this.onOpen) {
       this.onOpen();
-    } else {
-      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].verto('Socket open');
     }
   }
 
   _onSocketClose() {
+    _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Socket closed');
     this._resetClientState();
     if (this.onClose) {
       this.onClose();
-    } else {
-      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].verto('Socket closed');
     }
   }
 
   _onSocketMessage(event) {
     const message = this._parse(event.data);
     if (this.responseCallbacks[message.id]) {
-      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('Received response', message);
       this._handleResponse(message);
     } else {
-      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('Received event', message);
       this._handleEvent(message);
     }
   }
@@ -449,9 +629,9 @@ class VertoClient {
   // Client state helpers
 
   _cleanResponseCallbacks() {
+    _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Cleaning callbacks');
     const expired = [];
     const now = new Date();
-    _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].verto('Cleaning callbacks');
     for (const requestId in this.responseCallbacks) {
       const diff = now - this.responseCallbacks[requestId].sent;
       if (diff > this.requestExpiry) {
@@ -460,7 +640,7 @@ class VertoClient {
     }
     for (const requestId of expired) {
       delete this.responseCallbacks[requestId];
-      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('Deleted callback', requestId);
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('client', 'Deleted callback', requestId);
     }
   }
 
@@ -495,11 +675,11 @@ class VertoClient {
     if (value && value !== this.channelData[key]) {
       changed = true;
       this.channelData[key] = value;
-      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].verto('Set', key);
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Set', key);
     } else if (this.channelData[key] && !value) {
       changed = true;
       delete this.channelData[key];
-      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].verto('Unset', key);
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Unset', key);
     }
     if (changed) {
       localStorage.setItem(
@@ -528,7 +708,7 @@ class VertoClient {
     this.responseCallbacks[request.id] = new ResponseCallbacks(
       onSuccess, onError
     );
-    _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('Sending request', request);
+    _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Request', request);
     this.socket.send(request);
   }
 
@@ -541,24 +721,24 @@ class VertoClient {
   }
 
   _ping() {
-    this._cleanResponseCallbacks();
     const onError = (message) => {
       if (this.onPingError) {
         this.onPingError(message);
       } else {
-        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('Ping failure', message);
+        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('client', 'Ping error', message);
       }
     }
     const onSuccess = () => {
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Ping success');
       if (this.onPing) {
         this.onPing();
-      } else {
-        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].verto('Ping success');
       }
       const delay = this._pingInterval();
-      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].verto(`Waiting ${delay} before next ping`);
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', `Waiting ${delay} before next ping`);
       this.pingTimer = setTimeout(this._ping.bind(this), delay);
     }
+    _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Ping');
+    this._cleanResponseCallbacks();
     this._sendRequest('echo', {}, onSuccess, onError);
   }
 
@@ -569,15 +749,14 @@ class VertoClient {
     this.isAuthing = true;
     this.isAuthed = false;
     const onSuccess = () => {
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Logged in');
       this.isAuthing = false;
       this.isAuthed = true;
       const delay = this._pingInterval();
-      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].verto(`Waiting ${delay} before ping`);
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', `Waiting ${delay} before ping`);
       this.pingTimer = setTimeout(this._ping.bind(this), delay);
       if (this.onLogin) {
         this.onLogin();
-      } else {
-        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].verto('Logged in');
       }
     };
     const onError = (event) => {
@@ -589,7 +768,7 @@ class VertoClient {
       if (this.onLoginError) {
         this.onLoginError(event.error.message);
       } else {
-        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('Login failed', event);
+        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('client', 'Login failed', event);
       }
     };
     this._sendRequest('login', {
@@ -602,27 +781,26 @@ class VertoClient {
 
   _handleResponse(message) {
     if (message.result) {
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Response', message);
       const onSuccess = this.responseCallbacks[message.id].onSuccess;
       if (onSuccess) {
         onSuccess(message);
-      } else {
-        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].verto('Response', message);
       }
     } else {
       if (message.error) {
         const code = parseInt(message.error.code);
         if (code === CONST.authRequired) {
+          _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Response auth required', message);
           this._login();
         } else {
+          _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('client', 'Response error', message);
           const onError = this.responseCallbacks[message.id].onError;
           if (onError) {
             onError(message);
-          } else {
-            _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('Error response', message);
           }
         }
       } else {
-        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('Bad response', message);
+        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('client', 'Response unhandled', message);
       }
     }
     delete this.responseCallbacks[message.id];
@@ -630,39 +808,16 @@ class VertoClient {
 
   _handleEvent(event) {
     if (event.method === 'verto.clientReady') {
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Client ready', event.params);
       if (this.onReady) {
         this.onReady(event.params);
-      } else {
-        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].verto('Client ready', event.params);
-      }
-    } else if (event.method === 'verto.info') {
-      if (
-          event.params
-          && event.params.msg
-          && event.params.msg.to
-          && event.params.msg.from
-          && event.params.msg.body) {
-        const msg = event.params.msg;
-        const clientId = msg.to.split('@').shift();
-        const message = this._decode(msg.body);
-        if (clientId && clientId === this.sessionData.clientId) {
-          if (this.onMessage) {
-            this.onMessage(msg.from, message);
-          } else {
-            _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].verto('Message', event, message);
-          }
-        } else {
-          _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('Other message', event, message);
-        }
-      } else {
-        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('Empty message', event);
       }
     } else if (event.method === 'verto.event') {
       if (
           event.params
           && event.params.sessid
           && event.params.sessid === this.sessionData.sessionId) {
-        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].verto('Own event', event);
+        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Event own', event);
       } else if (
           event.params
           && event.params.userid
@@ -671,26 +826,24 @@ class VertoClient {
         if (event.params.eventChannel === this.channelId) {
           const clientId = event.params.userid.split('@').shift();
           const eventData = this._decode(event.params.eventData);
+          _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Event', clientId, eventData);
           if (this.onEvent) {
             this.onEvent(clientId, eventData);
-          } else {
-            _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].verto('Event', clientId, eventData);
           }
         } else {
-          _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('Other event', event);
+          _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('client', 'Event other', event);
         }
       } else {
-        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('Bad event', event);
+        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('client', 'Event unhandled', event);
       }
     } else if (event.method === 'verto.punt') {
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].debug('client', 'Punt');
       this.close();
       if (this.onPunt) {
         this.onPunt();
-      } else {
-        _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].verto('Punt');
       }
     } else {
-      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('Unhandled', event);
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('client', 'Unhandled', event);
     }
   }
 
@@ -713,7 +866,7 @@ class VertoClient {
     try {
       return JSON.parse(string);
     } catch (error) {
-      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('Error parsing', string, error);
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('client', 'Error parsing', string, error);
       return null;
     }
   }
@@ -727,7 +880,7 @@ class VertoClient {
         }
       ));
     } catch (error) {
-      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('Error encoding', object, error);
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('client', 'Error encoding', object, error);
       return '';
     }
   }
@@ -741,8 +894,191 @@ class VertoClient {
       );
       return JSON.parse(string);
     } catch (error) {
-      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('Error decoding', encoded, error);
+      _logger_js__WEBPACK_IMPORTED_MODULE_1__["default"].error('client', 'Error decoding', encoded, error);
       return null;
+    }
+  }
+}
+
+
+/***/ }),
+
+/***/ "./src/js/verto/peer.js":
+/*!******************************!*\
+  !*** ./src/js/verto/peer.js ***!
+  \******************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return VertoPeer; });
+/* harmony import */ var _logger_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../logger.js */ "./src/js/logger.js");
+/*
+ * Copyright (c) 2020 Peter Christensen. All Rights Reserved.
+ * CC BY-NC-ND 4.0.
+ */
+
+
+class VertoPeer {
+
+  constructor() {
+    this.pc = null;
+    this.isPolite = false;
+    this.isOffering = false;
+    this.isIgnoringOffers = false;
+
+    // Event handlers
+    this.onConnected = null;
+    this.onClosed = null;
+    this.onFailed = null;
+    this.onIceData = null;
+    this.onSdpOffer = null;
+    this.onBundleReady = null;
+    this.onRemoteTrack = null;
+  }
+
+  connect(isPolite) {
+    if (!this.pc) {
+      this.pc = this._getConnection();
+      this.isPolite = isPolite;
+      this.isOffering = false;
+      this.isIgnoringOffers = false;
+    }
+  }
+
+  close() {
+    if (this.pc && this.pc.connectionState !== 'closed') {
+      this.pc.close();
+      this.pc = null;
+    }
+  }
+
+  addTracks(stream) {
+    for (const track of stream.getTracks()) {
+      _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('peer', 'Sending', track.kind);
+      this.pc.addTrack(track, stream);
+    }
+  }
+
+  _getConnection() {
+    const config = {
+      iceServers: [{urls: `stun:${location.host}:53478`}],
+      bundlePolicy: 'max-compat',
+      sdpSemantics: 'plan-b',
+    }
+    const pc = new RTCPeerConnection(config);
+    pc.ontrack = (event) => {
+      if (event.track) {
+        _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('peer', 'Receiving remote', event.track);
+        if (this.onRemoteTrack) {
+          this.onRemoteTrack(event.track);
+        }
+      }
+    };
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        const candidate = event.candidate.toJSON();
+        _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('peer', 'Offering candidate', candidate)
+        if (this.onIceData) {
+          this.onIceData(candidate);
+        }
+      }
+    };
+    pc.onicegatheringstatechange = async () => {
+      if (pc.iceGatheringState === 'complete' && pc.localDescription) {
+        const sdp = pc.localDescription.toJSON();
+        _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('peer', 'Ready', sdp)
+        if (this.onBundleReady) {
+          this.onBundleReady(sdp.sdp);
+        }
+      }
+    };
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === 'connected') {
+        _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('peer', 'Connected');
+        if (this.onConnected) {
+          this.onConnected();
+        }
+      } else if (pc.connectionState === 'closed') {
+        _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('peer', 'Closed');
+        if (this.onClosed) {
+          this.onClosed();
+        }
+      } else if (pc.connectionState === 'failed') {
+        _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('peer', 'Failed');
+        if (this.onFailed) {
+          this.onFailed();
+        }
+      }
+    }
+    pc.onnegotiationneeded = async () => {
+      try {
+        this.isOffering = true;
+        const offer = await pc.createOffer();
+        if (pc.signalingState !== 'stable') {
+          _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('peer', 'Abandoned offer');
+          return;
+        }
+        await pc.setLocalDescription(offer);
+        if (pc.localDescription) {
+          const sdp = pc.localDescription.toJSON();
+          _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('peer', 'Offering', sdp)
+          if (this.onSdpOffer) {
+            this.onSdpOffer(sdp);
+          }
+        }
+      } catch (error) {
+        _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].error('rtp', 'Negotiation error', error);
+      } finally {
+        this.isOffering = false;
+      }
+    };
+    return pc;
+  }
+
+  // Inbound signal handlers.
+
+  async handleIceData(iceData) {
+    try {
+      await this.pc.addIceCandidate(iceData);
+    } catch (error) {
+      if (!this.isIgnoringOffers) {
+        _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].error('Received bad ICE data', iceData);
+      }
+    }
+  }
+
+  async handleSdpOffer(offerData, onAnswer) {
+    const sdp = new RTCSessionDescription(offerData);
+    const isOfferCollision = (
+      sdp.type === 'offer'
+      && (this.isOffering || this.pc.signalingState !== 'stable')
+    );
+    this.isIgnoringOffers = !this.isPolite && isOfferCollision;
+    if (this.isIgnoringOffers) {
+      _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('rpt', 'Ignored offer', sdp);
+      return;
+    }
+    if (isOfferCollision) {
+      await Promise.all([
+        this.pc.setLocalDescription({type: "rollback"}).catch((error) => {
+          _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].error('rtp', 'Rollback error', error);
+        }),
+        this.pc.setRemoteDescription(sdp)
+      ]);
+      _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('rtp', 'Rolled back offer');
+    } else {
+      await this.pc.setRemoteDescription(sdp);
+      _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('rpt', 'Accepted offer', sdp);
+    }
+    if (sdp.type === 'offer') {
+      await this.pc.setLocalDescription(await this.pc.createAnswer());
+      const sdp = this.pc.localDescription.toJSON();
+      _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('rpt', 'Sending answer', sdp);
+      if (onAnswer) {
+        onAnswer(sdp);
+      }
     }
   }
 }
@@ -817,8 +1153,6 @@ class VertoSocket {
         this.retryCount = 0;
         if (this.onOpen) {
           this.onOpen();
-        } else {
-          _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].verto('Socket open');
         }
       }
     }
@@ -827,23 +1161,19 @@ class VertoSocket {
       this.socket = null;
       if (this.onClose) {
         this.onClose();
-      } else {
-        _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].verto('Socket closed');
       }
       if (!this.isHalted) {
         const delay = this._retryInterval();
-        _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].verto(`Waiting ${delay} after ${this.retryCount} tries`);
+        _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('socket', `Waiting ${delay} after ${this.retryCount} tries`);
         this.retryTimer = setTimeout(() => {
           this.retryCount += 1;
           this.open();
         }, delay);
       }
     }
-    socket.onmessage = (event) => {
+    socket.onmessage = (message) => {
       if (this.onMessage) {
-        this.onMessage(event);
-      } else {
-        _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].verto('Socket received message', event);
+        this.onMessage(message);
       }
     }
   }
@@ -862,7 +1192,7 @@ class VertoSocket {
     if (this.socket && this.socket.readyState === 1) {
       this.socket.send(JSON.stringify(message));
     } else {
-      _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].error('Error sending', message);
+      _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].error('socket', 'Error sending', message);
     }
   }
 }

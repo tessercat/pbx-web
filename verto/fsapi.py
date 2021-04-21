@@ -1,4 +1,4 @@
-""" Verto app Fsapi request handler module. """
+""" Verto app fsapi request handler module. """
 from uuid import UUID
 from django.conf import settings
 from django.http import Http404
@@ -26,35 +26,6 @@ class VertoProfileHandler(FsapiHandler):
             'verto_port': settings.VERTO_PORT,
         }
         return template, context
-
-
-class VertoAuthHandler(FsapiHandler):
-    """ Client auth request handler. """
-
-    def __init__(self):
-        super().__init__(
-            action='jsonrpc-authenticate',
-            domain=settings.PBX_HOSTNAME,
-            section='directory',
-        )
-
-    def process(self, request):
-        """ Process verto client auth requests by auth realm (app name)
-        from the auth registry. """
-        try:
-            UUID(request.POST['user'], version=4)
-        except ValueError as err:
-            raise Http404 from err
-        client = get_object_or_404(Client, client_id=request.POST['user'])
-        auth_handler = settings.VERTO_AUTH_HANDLERS.registry.get(
-            client.channel.realm
-        )
-        if auth_handler:
-            self.logger.info(
-                'Processing %s.', auth_handler.__class__.__name__,
-            )
-            return auth_handler.process(request, client)
-        raise Http404
 
 
 class VertoLoginEventHandler(FsapiHandler):
@@ -120,7 +91,6 @@ class VertoDisconnectEventHandler(FsapiHandler):
 
 
 register_fsapi_handlers(
-    VertoAuthHandler(),
     VertoProfileHandler(),
     VertoLoginEventHandler(),
     VertoDisconnectEventHandler(),
