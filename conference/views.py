@@ -6,7 +6,19 @@ from django.http import Http404, HttpResponseForbidden, JsonResponse
 from django.utils import timezone
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import BaseDetailView, DetailView
+from conference.models import Conference
 from verto.models import Channel, Client
+
+
+def is_conference(channel):
+    """ Return True if the channel's application is a conference. """
+    try:
+        app = channel.application
+    except Channel.DoesNotExist:
+        return False
+    if isinstance(app, Conference):
+        return True
+    return False
 
 
 class IndexView(TemplateView):
@@ -22,7 +34,7 @@ class IndexView(TemplateView):
 
 
 class ClientView(DetailView):
-    """ Conference client channel view. """
+    """ Conference verto client channel view. """
     model = Channel
     slug_field = 'channel_id'
     slug_url_kwarg = 'channel_id'
@@ -31,8 +43,7 @@ class ClientView(DetailView):
     def get_context_data(self, **kwargs):
         """ Insert data into template context. """
         context = super().get_context_data(**kwargs)
-        context['page_title'] = context['object'].topic
-        context['common_css'] = settings.COMMON_CSS
+        context['page_title'] = context['object'].application.topic
         context['conference_css'] = settings.CONFERENCE_CSS
         context['adapter_js'] = settings.CONFERENCE_ADAPTER_JS
         context['client_js'] = settings.CONFERENCE_CLIENT_JS
@@ -40,11 +51,11 @@ class ClientView(DetailView):
         return context
 
     def get_object(self, queryset=None):
-        """ Raise 404 when auth realm is not correct. """
+        """ Raise 404 when application is not correct. """
         channel = super().get_object()
-        if channel.realm != settings.CONFERENCE_REALM:
-            raise Http404
-        return channel
+        if is_conference(channel):
+            return channel
+        raise Http404
 
 
 class SessionView(BaseDetailView):
@@ -87,11 +98,11 @@ class SessionView(BaseDetailView):
         }
 
     def get_object(self, queryset=None):
-        """ Raise 404 when auth realm is not correct. """
+        """ Raise 404 when application is not correct. """
         channel = super().get_object()
-        if channel.realm != settings.CONFERENCE_REALM:
-            raise Http404
-        return channel
+        if is_conference(channel):
+            return channel
+        raise Http404
 
     def render_to_response(self, context):
         """ Return context as JSON response or 403. """

@@ -1,29 +1,21 @@
 """ Verto app models module. """
 import uuid
 from django.db import models
-from django.urls import reverse
 
 
 class Channel(models.Model):
-    """ A URL UUID, a topic, an auth realm and public/private status. """
-
-    def get_absolute_url(self):
-        """ Return channel link.. """
-        return reverse('channel', kwargs={'channel': self.pk})
+    """ A channel ID. """
 
     channel_id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
         editable=False,
     )
-    topic = models.CharField(
-        max_length=100,
-    )
-    realm = models.SlugField()
     # client_set.all();
 
     def __str__(self):
-        return str(self.topic)
+        """ A shortened channel ID. """
+        return str(self.channel_id)[0:8]
 
 
 class Client(models.Model):
@@ -54,4 +46,5 @@ class Client(models.Model):
     )
 
     def __str__(self):
-        return str(self.client_id)[0:5]
+        """ A shortened client ID. """
+        return str(self.client_id)[0:8]

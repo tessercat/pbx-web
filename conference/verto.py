@@ -1,5 +1,6 @@
 """ Conference app verto request handler module. """
 from django.conf import settings
+from conference.models import Conference
 from verto.registries import (
     VertoDialplanHandler,
     VertoDirectoryHandler,
@@ -23,7 +24,7 @@ class ConferenceVertoDirectoryHandler(VertoDirectoryHandler):
 
 
 register_verto_directory_handler(
-    settings.CONFERENCE_REALM,
+    Conference.__name__,
     ConferenceVertoDirectoryHandler()
 )
 
@@ -42,6 +43,6 @@ class ConferenceVertoDialplanHandler(VertoDialplanHandler):
 
 
 register_verto_dialplan_handler(
-    settings.CONFERENCE_REALM,
+    Conference.__name__,
     ConferenceVertoDialplanHandler()
 )

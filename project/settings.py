@@ -91,8 +91,6 @@ CONFERENCE_CLIENT_JS = None
 
 CONFERENCE_ADAPTER_JS = None
 
-CONFERENCE_REALM = 'c'
-
 
 # Header and cookie definition
 
@@ -178,6 +176,8 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'var', 'db.sqlite3'),
     }
 }
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # Password validation

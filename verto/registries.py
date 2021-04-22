@@ -1,4 +1,4 @@
-""" Verto request handler registries module. """
+""" Verto registries module. """
 import logging
 from fsapi.registries import Handler
 

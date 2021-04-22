@@ -941,7 +941,7 @@ class VertoPeer {
     );
     this.isIgnoringOffers = !this.isPolite && isOfferCollision;
     if (this.isIgnoringOffers) {
-      _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('rpt', 'Ignored offer', sdp);
+      _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('peer', 'Ignored offer', sdp);
       return;
     }
     if (isOfferCollision) {
@@ -954,12 +954,12 @@ class VertoPeer {
       _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('rtp', 'Rolled back offer');
     } else {
       await this.pc.setRemoteDescription(sdp);
-      _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('rpt', 'Accepted offer', sdp);
+      _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('peer', 'Accepted offer', sdp);
     }
     if (sdp.type === 'offer') {
       await this.pc.setLocalDescription(await this.pc.createAnswer());
       const sdp = this.pc.localDescription.toJSON();
-      _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('rpt', 'Sending answer', sdp);
+      _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].debug('peer', 'Sending answer', sdp);
       if (onAnswer) {
         onAnswer(sdp);
       }

@@ -20,8 +20,12 @@ class VertoDialplanHandler(DialplanHandler):
         client = get_object_or_404(
             Client, client_id=request.POST['variable_user_name']
         )
+        try:
+            application = client.channel.application
+        except Channel.DoesNotExist as err:
+            raise Http404 from err
         handler = settings.VERTO_DIALPLAN_HANDLERS.registry.get(
-            client.channel.realm
+            application.__class__.__name__
         )
         if handler:
             self.logger.info('Processing %s', handler.__class__.__name__)
