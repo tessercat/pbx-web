@@ -1,10 +1,10 @@
 """ Verto app dialplan request handler module. """
 from uuid import UUID
-from django.conf import settings
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from verto.models import Client
 from dialplan.registries import DialplanHandler, register_dialplan_handler
+from verto.models import Channel, Client
+from verto.registries import verto_dialplan_handler_registry
 
 
 class VertoDialplanHandler(DialplanHandler):
@@ -24,7 +24,7 @@ class VertoDialplanHandler(DialplanHandler):
             application = client.channel.application
         except Channel.DoesNotExist as err:
             raise Http404 from err
-        handler = settings.VERTO_DIALPLAN_HANDLERS.registry.get(
+        handler = verto_dialplan_handler_registry.get(
             application.__class__.__name__
         )
         if handler:
@@ -33,4 +33,4 @@ class VertoDialplanHandler(DialplanHandler):
         raise Http404
 
 
-register_dialplan_handler(VertoDialplanHandler())
+register_dialplan_handler('verto', VertoDialplanHandler())

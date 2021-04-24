@@ -3,32 +3,21 @@ import logging
 from fsapi.registries import Handler
 
 
+dialplan_handler_registry = {}
+
+
 class DialplanHandler(Handler):
     """ Dialplan handler abstract class. """
     # pylint: disable=too-few-public-methods
 
     def process(self, request):
-        """ Process request and raise django.http.Http404 or ValueError
-        if request POST can't be processed, or return a tuple of template
-        and context if it can. """
+        """ Return a tuple of template and context. """
         raise NotImplementedError
 
 
-class _HandlerRegistry:
-    """ Dialplan request handler registry. """
-    # pylint: disable=too-few-public-methods
-
-    _registry = []
-    registry = _registry
-
-
-# settings.DIALPLAN_HANDLERS
-dialplan_handler_registry = _HandlerRegistry()
-
-
-def register_dialplan_handler(handler):
+def register_dialplan_handler(context, handler):
     """ Add a dialplan handler to the registry."""
-    dialplan_handler_registry.registry.append(handler)
+    dialplan_handler_registry[context] = handler
     logging.getLogger('django.server').info(
-        'Registered dialplan %s', handler.__class__.__name__
+        'Registered dialplan handler %s', handler.__class__.__name__
     )

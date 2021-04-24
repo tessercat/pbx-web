@@ -1,10 +1,10 @@
 """ Verto app directory request handler module. """
 from uuid import UUID
-from django.conf import settings
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from verto.models import Channel, Client
 from directory.registries import DirectoryHandler, register_directory_handler
+from verto.models import Channel, Client
+from verto.registries import verto_directory_handler_registry
 
 
 class VertoDirectoryHandler(DirectoryHandler):
@@ -22,7 +22,7 @@ class VertoDirectoryHandler(DirectoryHandler):
             application = client.channel.application
         except Channel.DoesNotExist as err:
             raise Http404 from err
-        handler = settings.VERTO_DIRECTORY_HANDLERS.registry.get(
+        handler = verto_directory_handler_registry.get(
             application.__class__.__name__
         )
         if handler:
@@ -31,4 +31,4 @@ class VertoDirectoryHandler(DirectoryHandler):
         raise Http404
 
 
-register_directory_handler(VertoDirectoryHandler())
+register_directory_handler('verto', VertoDirectoryHandler())

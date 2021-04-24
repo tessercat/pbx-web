@@ -114,7 +114,6 @@ class ConferenceClient {
   constructor() {
     this.client = new _verto_client_js__WEBPACK_IMPORTED_MODULE_2__["default"]();
     this.client.getSessionData = this._getSessionData.bind(this);
-    this.client.onLogin = this._startMedia.bind(this);
     this.client.onEvent = this._onEvent.bind(this);
 
     this.localMedia = new _local_media_js__WEBPACK_IMPORTED_MODULE_1__["default"]();
@@ -129,11 +128,18 @@ class ConferenceClient {
   }
 
   open() {
-    this.client.open();
-    this.peer.init(false);
+    this.localMedia.start();
   }
 
   close() {
+    const player = document.getElementById('media-player');
+    player.style.display = 'none';
+    if (player.srcObject) {
+      for (const track of player.srcObject.getTracks()) {
+        track.stop();
+      }
+      player.srcObject = null;
+    }
     this.peer.close();
     this.localMedia.stop();
     this.client.close();
@@ -157,10 +163,6 @@ class ConferenceClient {
     });
   }
 
-  _startMedia() {
-    this.localMedia.start();
-  }
-
   _onEvent(event) {
     if (event.method === 'verto.answer') {
       if (this.remoteSdp) {
@@ -169,9 +171,15 @@ class ConferenceClient {
       }
     } else if (event.method === 'verto.attach') {
       this.callID = event.params.callID;
-      this.peer.setRemoteDescription('offer', event.params.sdp);
+      this.remoteSdp = event.params.sdp;
     } else if (event.method === 'verto.clientReady') {
       _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].info('conference', 'Client ready');
+      this.peer.init(false);
+      this.peer.addTracks(this.localMedia.stream);
+      if (this.remoteSdp) {
+        this.peer.setRemoteDescription('offer', this.remoteSdp);
+        this.remoteSdp = null;
+      }
     } else if (event.method === 'verto.media') {
       this.remoteSdp = event.params.sdp;
     } else {
@@ -181,8 +189,8 @@ class ConferenceClient {
 
   // Local media callbacks
 
-  _onMediaStart(stream) {
-    this.peer.addTracks(stream);
+  _onMediaStart() {
+    this.client.open();
   }
 
   // Verto peer callbacks
@@ -224,7 +232,13 @@ class ConferenceClient {
   }
 
   _onPeerTrack(track) {
-    _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].info('conference', 'Add this track to the video element!', track);
+    _logger_js__WEBPACK_IMPORTED_MODULE_0__["default"].info('conference', 'Adding track');
+    const player = document.getElementById('media-player');
+    if (!player.srcObject) {
+      player.srcObject = new MediaStream();
+    }
+    player.srcObject.addTrack(track);
+    player.style.display = 'unset';
   }
 }
 

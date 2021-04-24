@@ -1,6 +1,5 @@
 """ Verto app fsapi request handler module. """
 from uuid import UUID
-from django.conf import settings
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -8,27 +7,7 @@ from verto.models import Client
 from fsapi.registries import FsapiHandler, register_fsapi_handler
 
 
-class VertoProfileHandler(FsapiHandler):
-    """ Verto profile config request handler. """
-
-    def __init__(self):
-        super().__init__(
-            key_value='verto.conf',
-            section='configuration',
-        )
-
-    def process(self, request):
-        """ Process verto profile configuration requests. """
-        template = 'verto/verto.conf.xml'
-        context = {
-            'debug_level': 10,
-            'directory_domain': settings.PBX_HOSTNAME,
-            'verto_port': settings.VERTO_PORT,
-        }
-        return template, context
-
-
-class VertoLoginEventHandler(FsapiHandler):
+class VertoLoginHandler(FsapiHandler):
     """ Handle verto client login events. """
 
     def __init__(self):
@@ -66,7 +45,7 @@ class VertoLoginEventHandler(FsapiHandler):
         return template, {'response': 'ok'}
 
 
-class VertoDisconnectEventHandler(FsapiHandler):
+class VertoDisconnectHandler(FsapiHandler):
     """ Handle verto client disconnect events. """
 
     def __init__(self):
@@ -90,6 +69,5 @@ class VertoDisconnectEventHandler(FsapiHandler):
         return template, {'response': 'ok'}
 
 
-register_fsapi_handler(VertoProfileHandler())
-register_fsapi_handler(VertoLoginEventHandler())
-register_fsapi_handler(VertoDisconnectEventHandler())
+register_fsapi_handler(VertoLoginHandler())
+register_fsapi_handler(VertoDisconnectHandler())

@@ -8,7 +8,7 @@ class ChannelAdmin(admin.ModelAdmin):
     """ Channel model admin tweaks. """
 
     def channel_name(self, obj):
-        """ Channel link in list display. """
+        """ Channel string in list display. """
         # pylint: disable=no-self-use
         return str(obj)
 
@@ -34,8 +34,16 @@ class ChannelAdmin(admin.ModelAdmin):
 class ClientAdmin(admin.ModelAdmin):
     """ Client model admin tweaks. """
 
+    def client_name(self, obj):
+        """ Client string in list display. """
+        # pylint: disable=no-self-use
+        return str(obj)
+
+    client_name.short_description = 'Client'
+
     ordering = ('-connected', '-created')
     list_display = (
+        'client_name',
         'channel',
         'created',
         'connected'

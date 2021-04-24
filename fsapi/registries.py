@@ -16,6 +16,9 @@ class Handler:
         self.logger.info(render(request, template, context).content.decode())
 
 
+fsapi_handler_registry = []
+
+
 class FsapiHandler(Handler):
     """ Handle requests based on POST field matches. """
 
@@ -27,7 +30,7 @@ class FsapiHandler(Handler):
         self.keys.update(**kwargs)
 
     def matches(self, request):
-        """ Return True if POST data contains all expected keyis/values. """
+        """ Return True if POST data contains all expected keys/values. """
         for key in self.keys:
             if (
                     key not in request.POST
@@ -40,21 +43,9 @@ class FsapiHandler(Handler):
         raise NotImplementedError
 
 
-class _HandlerRegistry:
-    """ Fsapi request handler registry. """
-    # pylint: disable=too-few-public-methods
-
-    _registry = []
-    registry = _registry
-
-
-# settings.FSAPI_REQUEST_HANDLERS
-fsapi_handler_registry = _HandlerRegistry()
-
-
 def register_fsapi_handler(handler):
     """ Add a handler to the global handler registry."""
-    fsapi_handler_registry.registry.append(handler)
+    fsapi_handler_registry.append(handler)
     logging.getLogger('django.server').info(
-        'Registered fsapi %s', handler.__class__.__name__
+        'Registered fsapi handler %s', handler.__class__.__name__
     )

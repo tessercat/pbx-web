@@ -2,14 +2,6 @@
 import ast
 import os
 import random
-from common.registries import common_protected_paths_registry
-from fsapi.registries import fsapi_handler_registry
-from dialplan.registries import dialplan_handler_registry
-from directory.registries import directory_handler_registry
-from verto.registries import (
-    verto_dialplan_handler_registry,
-    verto_directory_handler_registry
-)
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -69,21 +61,9 @@ DEBUG = False
 EMAIL_SUBJECT_PREFIX = '[PBX] '
 
 
-# App-specific settings
+# App-specific globals
 
 COMMON_CSS = None
-
-COMMON_PROTECTED_PATHS = common_protected_paths_registry
-
-FSAPI_REQUEST_HANDLERS = fsapi_handler_registry
-
-DIRECTORY_HANDLERS = directory_handler_registry
-
-DIALPLAN_HANDLERS = dialplan_handler_registry
-
-VERTO_DIRECTORY_HANDLERS = verto_directory_handler_registry
-
-VERTO_DIALPLAN_HANDLERS = verto_dialplan_handler_registry
 
 CONFERENCE_CSS = None
 
@@ -122,6 +102,7 @@ INSTALLED_APPS = [
     'fsapi.apps.FsapiConfig',
     'directory.apps.DirectoryConfig',
     'dialplan.apps.DialplanConfig',
+    'configuration.apps.ConfigurationConfig',
     'verto.apps.VertoConfig',
     'conference.apps.ConferenceConfig',
     'django.contrib.admin',

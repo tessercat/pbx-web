@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <document type="freeswitch/xml">
   <section name="directory">
-    <domain name="{{ pbx_hostname }}">
+    <domain name="verto">
       <user id="{{ user_id }}">
         <params>
           <param name="jsonrpc-allowed-methods" value="echo,verto.invite,verto.attach" />

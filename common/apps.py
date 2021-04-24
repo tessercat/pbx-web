@@ -4,7 +4,6 @@ import os
 import sys
 from django.apps import AppConfig
 from django.utils.module_loading import autodiscover_modules
-from common.registries import common_protected_paths_registry
 
 
 class CommonConfig(AppConfig):
@@ -18,9 +17,7 @@ class CommonConfig(AppConfig):
         from django.conf import settings
 
         # Autodiscover protected paths configuration.
-        autodiscover_modules(
-            'protected_paths', register_to=common_protected_paths_registry
-        )
+        autodiscover_modules('protected_paths')
 
         # Configure common CSS file.
         pattern = 'common.?????.css'

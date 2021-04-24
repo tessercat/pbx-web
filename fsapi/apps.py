@@ -1,7 +1,6 @@
 """ Fsapi app config module. """
 from django.apps import AppConfig
 from django.utils.module_loading import autodiscover_modules
-from fsapi.registries import fsapi_handler_registry
 
 
 class FsapiConfig(AppConfig):
@@ -10,6 +9,4 @@ class FsapiConfig(AppConfig):
 
     def ready(self):
         """ Autodiscover registries. """
-        autodiscover_modules(
-            'fsapi', register_to=fsapi_handler_registry
-        )
+        autodiscover_modules('fsapi')

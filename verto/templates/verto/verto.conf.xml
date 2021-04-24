@@ -6,14 +6,14 @@
         <param name="debug" value="{{ debug_level }}"/>
         <param name="enable-fs-events" value="false"/>
         <param name="enable-presence" value="false"/>
-        <param name="detach-timeout-sec" value="10"/>
+        <param name="detach-timeout-sec" value="0"/>
       </settings>
       <profiles>
         <profile name="verto4">
           <param name="rtp-ip" value="$${local_ip_v4}"/>
           <param name="secure-combined" value="$${certs_dir}/wss.pem"/>
           <param name="bind-local" value="127.0.0.1:{{ verto_port }}"/>
-          <param name="force-register-domain" value="{{ directory_domain }}"/>
+          <param name="force-register-domain" value="verto"/>
           <param name="userauth" value="true"/>
           <param name="blind-reg" value="false"/>
           <param name="context" value="verto"/>
@@ -24,7 +24,7 @@
           <param name="rtp-ip" value="$${local_ip_v6}"/>
           <param name="secure-combined" value="$${certs_dir}/wss.pem"/>
           <param name="bind-local" value="[::1]:{{ verto_port }}"/>
-          <param name="force-register-domain" value="{{ directory_domain }}"/>
+          <param name="force-register-domain" value="verto"/>
           <param name="userauth" value="true"/>
           <param name="blind-reg" value="false"/>
           <param name="context" value="verto"/>

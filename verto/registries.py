@@ -3,6 +3,9 @@ import logging
 from fsapi.registries import Handler
 
 
+verto_directory_handler_registry = {}
+
+
 class VertoDirectoryHandler(Handler):
     """ Verto directory handler abstract class. """
     # pylint: disable=too-few-public-methods
@@ -12,23 +15,15 @@ class VertoDirectoryHandler(Handler):
         raise NotImplementedError
 
 
-class _DirectoryHandlerRegistry:
-    """ Verto directory handler registry. """
-    # pylint: disable=too-few-public-methods
-
-    _registry = {}
-    registry = _registry
-
-
-verto_directory_handler_registry = _DirectoryHandlerRegistry()
-
-
 def register_verto_directory_handler(realm, handler):
     """ Add a verto auth handler to the global handler registry."""
-    verto_directory_handler_registry.registry[realm] = handler
+    verto_directory_handler_registry[realm] = handler
     logging.getLogger('django.server').info(
-        'Registered verto %s', handler.__class__.__name__
+        'Registered verto directory handler %s', handler.__class__.__name__
     )
+
+
+verto_dialplan_handler_registry = {}
 
 
 class VertoDialplanHandler(Handler):
@@ -40,20 +35,9 @@ class VertoDialplanHandler(Handler):
         raise NotImplementedError
 
 
-class _DialplanHandlerRegistry:
-    """ Verto dialplan handler registry. """
-    # pylint: disable=too-few-public-methods
-
-    _registry = {}
-    registry = _registry
-
-
-verto_dialplan_handler_registry = _DialplanHandlerRegistry()
-
-
 def register_verto_dialplan_handler(realm, handler):
     """ Add a verto auth handler to the global handler registry."""
-    verto_dialplan_handler_registry.registry[realm] = handler
+    verto_dialplan_handler_registry[realm] = handler
     logging.getLogger('django.server').info(
-        'Registered verto %s', handler.__class__.__name__
+        'Registered verto dialplan handler %s', handler.__class__.__name__
     )
