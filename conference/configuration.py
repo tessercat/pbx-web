@@ -6,11 +6,11 @@ from configuration.registries import (
 )
 
 
-class ConferenceHandler(ConfigurationHandler):
+class ConferenceConfigHandler(ConfigurationHandler):
     """ Conference module config request handler. """
 
     def process(self, request):
-        """ Process conference configuration requests. """
+        """ Return template/context. """
         template = 'conference/conference.conf.xml'
         context = {
             'domain': settings.PBX_HOSTNAME,
@@ -18,4 +18,4 @@ class ConferenceHandler(ConfigurationHandler):
         return template, context
 
 
-register_configuration_handler('conference.conf', ConferenceHandler())
+register_configuration_handler('conference.conf', ConferenceConfigHandler())

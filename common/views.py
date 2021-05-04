@@ -4,8 +4,8 @@ from django.http import (
     HttpResponseForbidden,
     HttpResponseNotFound,
 )
-from django.conf import settings
 from django.shortcuts import render
+from common.apps import common_settings
 
 
 def custom400(request, exception):
@@ -15,7 +15,7 @@ def custom400(request, exception):
         request,
         'common/error.html',
         {
-            'common_css': settings.COMMON_CSS,
+            'css': common_settings.get('css'),
             'message': 'Bad Request',
             'page_title': '400 Bad Request'
         },
@@ -29,7 +29,7 @@ def custom403(request, reason=''):
         request,
         'common/error.html',
         {
-            'common_css': settings.COMMON_CSS,
+            'css': common_settings.get('css'),
             'message': 'Forbidden',
             'page_title': '403 Forbidden'
         },
@@ -45,8 +45,8 @@ def custom404(request, exception):
         request,
         'common/error.html',
         {
-            'common_css': settings.COMMON_CSS,
+            'css': common_settings.get('css'),
             'message': 'Not Found',
-            'page_title': '404 Not Found'
+            'title': '404 Not Found'
         },
     ))

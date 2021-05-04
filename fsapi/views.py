@@ -1,5 +1,4 @@
 """ Fsapi app view module. """
-import logging
 from django.http import Http404, HttpResponse
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
@@ -26,9 +25,6 @@ class FsapiView(View):
         request.custom404 = custom404
         for handler in fsapi_handler_registry:
             if handler.matches(request):
-                logging.getLogger('django.server').info(
-                    'Processing %s', handler.__class__.__name__
-                )
                 template, context = handler.process(request)
                 return HttpResponse(render(request, template, context))
         raise Http404

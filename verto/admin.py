@@ -6,48 +6,34 @@ from verto.models import Channel, Client
 @admin.register(Channel)
 class ChannelAdmin(admin.ModelAdmin):
     """ Channel model admin tweaks. """
+    list_display = ('channel_id',)
 
-    def channel_name(self, obj):
-        """ Channel string in list display. """
-        # pylint: disable=no-self-use
-        return str(obj)
+    def has_add_permission(self, request):
+        """ Disable add. """
+        return False
 
-    channel_name.short_description = 'Channel'
+    def has_change_permission(self, request, obj=None):
+        """ Disable change. """
+        return False
 
-    def application_link(self, obj):
-        """ Channel application link. """
-        # pylint: disable=no-self-use
-        try:
-            return obj.application.__class__.__name__
-        except Channel.DoesNotExist:
-            return ''
-
-    application_link.short_description = 'Application'
-
-    list_display = (
-        'channel_name',
-        'application_link',
-    )
+    def has_delete_permission(self, request, obj=None):
+        """ Disable delete. """
+        return False
 
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
     """ Client model admin tweaks. """
+    list_display = ('client_id', 'channel', 'created', 'connected')
 
-    def client_name(self, obj):
-        """ Client string in list display. """
-        # pylint: disable=no-self-use
-        return str(obj)
+    def has_add_permission(self, request):
+        """ Disable add. """
+        return False
 
-    client_name.short_description = 'Client'
+    def has_change_permission(self, request, obj=None):
+        """ Disable change. """
+        return False
 
-    ordering = ('-connected', '-created')
-    list_display = (
-        'client_name',
-        'channel',
-        'created',
-        'connected'
-    )
-    search_fields = (
-        'channel__channel_id__exact',
-    )
+    def has_delete_permission(self, request, obj=None):
+        """ Disable delete. """
+        return False

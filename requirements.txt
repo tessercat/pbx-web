@@ -8,7 +8,7 @@ asgiref==3.3.4
     # via
     #   daphne
     #   django
-attrs==20.3.0
+attrs==21.2.0
     # via
     #   automat
     #   service-identity
@@ -32,13 +32,13 @@ daphne==3.0.2
     # via -r requirements.in
 django-prometheus==2.1.0
     # via -r requirements.in
-django==3.2
+django==3.2.2
     # via -r requirements.in
 h11==0.12.0
     # via httpcore
-httpcore==0.12.3
+httpcore==0.13.3
     # via httpx
-httpx==0.17.1
+httpx==0.18.1
     # via -r requirements.in
 hyperlink==21.0.0
     # via
@@ -49,7 +49,7 @@ idna==3.1
     #   hyperlink
     #   rfc3986
     #   twisted
-importlib-metadata==4.0.0
+importlib-metadata==4.0.1
     # via markdown
 incremental==21.3.0
     # via twisted
@@ -69,11 +69,11 @@ pyopenssl==20.0.1
     # via twisted
 pytz==2021.1
     # via django
-rfc3986[idna2008]==1.4.0
+rfc3986[idna2008]==1.5.0
     # via httpx
 service-identity==18.1.0
     # via twisted
-six==1.15.0
+six==1.16.0
     # via
     #   automat
     #   pyopenssl
@@ -87,7 +87,7 @@ twisted[tls]==21.2.0
     # via daphne
 txaio==21.2.1
     # via autobahn
-typing-extensions==3.7.4.3
+typing-extensions==3.10.0.0
     # via
     #   asgiref
     #   importlib-metadata

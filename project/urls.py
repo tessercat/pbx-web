@@ -1,9 +1,7 @@
 """ Project URL Configuration """
 from django.contrib import admin
 from django.urls import include, path
-from common.views import custom400
-from common.views import custom404
-from conference.views import IndexView
+from common.views import custom400, custom404
 
 
 admin.site.site_header = 'PBX'
@@ -14,8 +12,7 @@ handler404 = custom404
 
 urlpatterns = [
     path('', include('django_prometheus.urls')),
-    path('', IndexView.as_view(), name='pbx-conference-index'),
+    path('', include('action.urls')),
     path('fsapi', include('fsapi.urls')),
-    path('c/', include('conference.urls')),
     path('admin/', admin.site.urls),
 ]

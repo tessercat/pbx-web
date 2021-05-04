@@ -47,5 +47,5 @@ def register_fsapi_handler(handler):
     """ Add a handler to the global handler registry."""
     fsapi_handler_registry.append(handler)
     logging.getLogger('django.server').info(
-        'Registered fsapi handler %s', handler.__class__.__name__
+        'fsapi %s', handler.__class__.__name__
     )

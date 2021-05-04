@@ -1,0 +1,14 @@
+{% extends "common/base.html" %}
+{% load static %}
+
+{% block style %}
+    <link rel="stylesheet" href="{% static 'action/css/'|add:css %}">
+{% endblock %}
+
+{% block content %}
+    <main class="padded">
+      <p class="error">
+      Hi
+      </p>
+    </main>
+{% endblock %}

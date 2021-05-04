@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<document type="freeswitch/xml">
+  <section name="configuration">
+    <configuration name="sofia.conf" description="Sofia Endpoint">
+
+      <global_settings>
+      </global_settings>
+
+      <profiles>
+        {% for intercom in intercoms %}
+        {% with domain=intercom.domain port=intercom.port %}
+{% include "sofia/intercom.xml" %}
+        {% endwith %}
+        {% endfor %}
+        <!-- Add gateways. -->
+      </profiles>
+
+    </configuration>
+  </section>
+</document>

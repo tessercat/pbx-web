@@ -28,7 +28,7 @@ class VertoLoginHandler(FsapiHandler):
         it against the expected value will catch the error since the
         Client model enforces UUID session_id.
         """
-        template = 'verto/verto-event.txt'
+        template = 'verto/event.txt'
         client = Client.objects.get(client_id=request.POST['client_id'])
         if str(client.session_id) != request.POST['session_id']:
             self.admin_logger.error(
@@ -57,7 +57,7 @@ class VertoDisconnectHandler(FsapiHandler):
         """ Process verto client disconnect events and return "ok". If a
         client for the login username (client_id) is found, unset the
         client's connected timestamp. """
-        template = 'verto/verto-event.txt'
+        template = 'verto/event.txt'
         client_id = request.POST['client_id'].split('@')[0]
         try:
             UUID(client_id, version=4)

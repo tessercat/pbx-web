@@ -1,7 +1,6 @@
 """ Verto app config module. """
 import sys
 from django.apps import AppConfig
-from django.utils.module_loading import autodiscover_modules
 
 
 class VertoConfig(AppConfig):
@@ -9,9 +8,7 @@ class VertoConfig(AppConfig):
     name = 'verto'
 
     def ready(self):
-        """ Autodiscover registries and open ports. """
-        autodiscover_modules('verto_directory')
-        autodiscover_modules('verto_dialplan')
+        """ Configure verto app. """
         if sys.argv[-1] == 'project.asgi:application':
             # pylint: disable=import-outside-toplevel
             from django.conf import settings

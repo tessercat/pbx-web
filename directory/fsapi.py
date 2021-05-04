@@ -23,8 +23,7 @@ class DirectoryHandler(FsapiHandler):
         if not handler:
             self.logger.info('No directory handler for %s', domain)
             raise Http404
-        self.logger.info('Processing %s', handler.__class__.__name__)
-        return handler.process(request)
+        return handler.get_directory(request, domain)
 
 
 register_fsapi_handler(DirectoryHandler())

@@ -1,4 +1,4 @@
-<configuration name="conference.conf" description="A/V Conference">
+<configuration name="conference.conf" description="Conference">
   <profiles>
     <profile name="default">
       <param name="domain" value="{{ domain }}"/>

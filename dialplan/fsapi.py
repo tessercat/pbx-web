@@ -23,8 +23,7 @@ class DialplanHandler(FsapiHandler):
         if not handler:
             self.logger.info('No dialplan handler for %s', context)
             raise Http404
-        self.logger.info('Processing %s', handler.__class__.__name__)
-        return handler.process(request)
+        return handler.get_dialplan(request, context)
 
 
 register_fsapi_handler(DialplanHandler())

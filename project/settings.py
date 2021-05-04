@@ -46,6 +46,8 @@ TIME_ZONE = SETTINGS['TIME_ZONE']
 
 VERTO_PORT = SETTINGS['VERTO_PORT']
 
+INTERCOM_PORTS = SETTINGS['INTERCOM_PORTS']
+
 
 # Other custom settings
 
@@ -59,17 +61,6 @@ CSRF_FAILURE_VIEW = 'common.views.custom403'
 DEBUG = False
 
 EMAIL_SUBJECT_PREFIX = '[PBX] '
-
-
-# App-specific globals
-
-COMMON_CSS = None
-
-CONFERENCE_CSS = None
-
-CONFERENCE_CLIENT_JS = None
-
-CONFERENCE_ADAPTER_JS = None
 
 
 # Header and cookie definition
@@ -100,10 +91,12 @@ INSTALLED_APPS = [
     'django_prometheus',
     'common.apps.CommonConfig',
     'fsapi.apps.FsapiConfig',
+    'configuration.apps.ConfigurationConfig',
     'directory.apps.DirectoryConfig',
     'dialplan.apps.DialplanConfig',
-    'configuration.apps.ConfigurationConfig',
+    'sofia.apps.SofiaConfig',
     'verto.apps.VertoConfig',
+    'action.apps.ActionConfig',
     'conference.apps.ConferenceConfig',
     'django.contrib.admin',
     'django.contrib.auth',

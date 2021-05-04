@@ -23,7 +23,6 @@ class ConfigurationHandler(FsapiHandler):
         if not handler:
             self.logger.info('No configuration handler for %s', key_value)
             raise Http404
-        self.logger.info('Processing %s', handler.__class__.__name__)
         return handler.process(request)
 
 

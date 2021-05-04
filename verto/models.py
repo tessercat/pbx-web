@@ -4,23 +4,22 @@ from django.db import models
 
 
 class Channel(models.Model):
-    """ A channel ID. """
-
+    """ An ID and an extension. """
     channel_id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
         editable=False,
     )
-    # client_set.all();
+    # channel.action
+    # channel.client_set;
 
     def __str__(self):
         """ A shortened channel ID. """
-        return str(self.channel_id)[0:8]
+        return str(self.channel_id)[:8]
 
 
 class Client(models.Model):
-    """ Client and session IDs, a password and timestamps for a channel. """
-
+    """ A session-specific username/password for a channel. """
     client_id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -31,7 +30,7 @@ class Client(models.Model):
         editable=False,
     )
     channel = models.ForeignKey(
-        'Channel',
+        Channel,
         on_delete=models.CASCADE,
     )
     session_id = models.UUIDField(
@@ -47,4 +46,4 @@ class Client(models.Model):
 
     def __str__(self):
         """ A shortened client ID. """
-        return str(self.client_id)[0:8]
+        return str(self.client_id)[:8]

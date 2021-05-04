@@ -6,19 +6,16 @@ from configuration.registries import (
 )
 
 
-class VertoProfileHandler(ConfigurationHandler):
-    """ Verto profile config request handler. """
-    # pylint: disable=too-few-public-methods
+class VertoConfigHandler(ConfigurationHandler):
+    """ Verto config request handler. """
 
     def process(self, request):
-        """ Process verto profile configuration requests. """
-        # pylint: disable=no-self-use
+        """ Return template and context. """
         template = 'verto/verto.conf.xml'
         context = {
-            'debug_level': 10,
             'verto_port': settings.VERTO_PORT,
         }
         return template, context
 
 
-register_configuration_handler('verto.conf', VertoProfileHandler())
+register_configuration_handler('verto.conf', VertoConfigHandler())
