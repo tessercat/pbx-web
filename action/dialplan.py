@@ -1,5 +1,6 @@
 """ Action app dialplan request handler module. """
 from uuid import UUID
+from django.conf import settings
 from django.db.utils import OperationalError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -12,12 +13,13 @@ class ActionHandler(DialplanHandler):
     """ Abstract dialplan request handler. """
 
     def get_action(self, request, context):
-        """ Return an Action. """
+        """ Set number on an Action and return it. """
         raise NotImplementedError
 
     def get_dialplan(self, request, context):
         """ Handle a dialplan request """
         action = self.get_action(request, context)
+        action.hostname = settings.PBX_HOSTNAME
         template = action.get_template()
         context = {
             'context': context,
@@ -52,7 +54,9 @@ class ClientActionHandler(ActionHandler):
 
         # Actions have a Channel.
         if hasattr(client.channel, 'action'):
-            return client.channel.action.get_action()
+            action = client.channel.action.get_action()
+            action.number = channel_id
+            return action
         raise Http404
 
 
@@ -76,7 +80,9 @@ class ExtensionActionHandler(ActionHandler):
 
         # Actions have an Extension.
         if hasattr(extension.channel, 'action'):
-            return extension.channel.action.get_action()
+            action = extension.channel.action.get_action()
+            action.number = number
+            return action
         raise Http404
 
 

@@ -97,6 +97,7 @@ INSTALLED_APPS = [
     'sofia.apps.SofiaConfig',
     'verto.apps.VertoConfig',
     'action.apps.ActionConfig',
+    'call.apps.CallConfig',
     'conference.apps.ConferenceConfig',
     'django.contrib.admin',
     'django.contrib.auth',

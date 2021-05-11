@@ -35,8 +35,7 @@ class Action(models.Model):
     template = None
     verto_methods = ['echo', 'verto.invite', 'verto.attach']
 
-    # Validate callee_name as whetever CNAM allows.
-    callee_name = models.CharField(max_length=15)
+    name = models.CharField(max_length=50)
     extension = models.OneToOneField(
         Extension,
         blank=True,

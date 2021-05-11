@@ -9,15 +9,16 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
+        ('sofia', '0001_initial'),
         ('action', '0001_initial'),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Conference',
+            name='Call',
             fields=[
                 ('action_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='action.action')),
-                ('data', models.SlugField()),
+                ('line', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='sofia.sipline')),
             ],
             bases=('action.action',),
         ),

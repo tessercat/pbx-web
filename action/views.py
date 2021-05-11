@@ -36,7 +36,7 @@ class ClientView(DetailView):
             action = self.object.action.get_action()
         else:
             raise Http404
-        context['title'] = action.callee_name
+        context['title'] = action.name
         context['stun_port'] = settings.STUN_PORT
         context['css'] = action_settings.get('css')
         context['adapter'] = action_settings.get('adapter')

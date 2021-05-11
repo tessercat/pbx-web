@@ -19,7 +19,7 @@ class IntercomAdmin(admin.ModelAdmin):
     def uri_repr(self, obj):
         """ Return profile SIPS URI. """
         # pylint: disable=no-self-use
-        return 'sips://%s:%s' % (settings.PBX_HOSTNAME, obj.port)
+        return 'sips:%s:%s' % (settings.PBX_HOSTNAME, obj.port)
 
     intercom_repr.short_description = 'Intercom'
     uri_repr.short_description = 'URI'

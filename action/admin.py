@@ -11,5 +11,5 @@ class ActionAdmin(admin.ModelAdmin):
         return obj.get_link()
 
     channel_repr.short_description = 'Channel'
-    list_display = ('callee_name', 'extension', 'channel_repr')
+    list_display = ('name', 'extension', 'channel_repr')
     exclude = ('channel',)

@@ -25,7 +25,7 @@ class GatewayProfile(SofiaProfile):
 
 
 class SipLine(models.Model):
-    """ A named IntercomProfile SipLine. """
+    """ A named IntercomProfile username/password registration. """
 
     class Meta:
         constraints = [
@@ -34,6 +34,7 @@ class SipLine(models.Model):
                 fields=['username', 'intercom']
             ),
         ]
+        verbose_name = 'SIP line'
 
     # Validate caller_name as whetever CNAM allows.
     # Autogenerate username/password?
