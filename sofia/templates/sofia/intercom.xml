@@ -1,4 +1,4 @@
-        <profile name="{{ domain }}">
+        <profile name="{{ intercom.domain }}">
 
           <aliases>
           </aliases>
@@ -13,7 +13,7 @@
 
             <param name="tls" value="true"/>
             <param name="tls-only" value="true"/>
-            <param name="tls-sip-port" value="{{ port }}"/>
+            <param name="tls-sip-port" value="{{ intercom.port }}"/>
             <param name="tls-version" value="tlsv1.2"/>
             <param name="ext-sip-ip" value="$${local_ip_v4}"/>
 
@@ -24,6 +24,7 @@
             <param name="rtp-ip" value="$${local_ip_v4}"/>
             <param name="ext-rtp-ip" value="$${local_ip_v4}"/>
             <param name="rtp-timer-name" value="soft"/>
+            <!-- Inbound only? Put rtp_secure_media=true in channel vars for outbound. -->
             <param name="require-secure-rtp" value="true"/>
 
             <param name="rfc2833-pt" value="101"/>
@@ -31,13 +32,12 @@
             <param name="dtmf-duration" value="2000"/><!-- default 20 -->
 
             <param name="auth-calls" value="true"/>
-            <param name="force-register-domain" value="{{ domain }}"/>
             <param name="log-auth-failures" value="true"/>
-
+            <param name="force-register-domain" value="{{ intercom.domain }}"/>
             <param name="manage-presence" value="false"/>
 
             <param name="dialplan" value="XML"/>
-            <param name="context" value="{{ domain }}"/>
+            <param name="context" value="{{ intercom.domain }}"/>
 
           </settings>
 

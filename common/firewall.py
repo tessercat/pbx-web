@@ -3,7 +3,7 @@ from django.conf import settings
 import httpx
 
 
-def accept(transport, start, end):
+def accept(transport, start, end, src=None):
     """ Allow IPv4 and IPv6 traffic to the transport/port-range. """
     response = httpx.post(
         'http://localhost:%s/iptables/input/accept' % (
@@ -14,6 +14,7 @@ def accept(transport, start, end):
             'transport': transport,
             'start': start,
             'end': end,
+            'src': src
         }
     )
     response.raise_for_status()

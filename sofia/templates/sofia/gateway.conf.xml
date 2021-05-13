@@ -1,44 +1,12 @@
-<profile name="{{ domain }}">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="freeswitch/xml">
+  <section name="configuration">
+    <configuration name="sofia.conf" description="Sofia Endpoint">
 
-  <aliases>
-  </aliases>
+      <profiles>
+{% include "sofia/gateway.xml" %}
+      </profiles>
 
-  <gateways>
-  </gateways>
-
-  <domains>
-    <domain name="all" alias="false" parse="false"/>
-  </domains>
-
-  <settings>
-
-    <param name="ext-sip-ip" value="$${local_ip_v4}"/>
-    <param name="tls" value="true"/>
-    <param name="tls-only" value="true"/>
-    <param name="tls-sip-port" value="{{ port }}"/>
-    <param name="tls-version" value="tlsv1.2"/>
-
-    <param name="codec-prefs" value="OPUS,PCMU,G729"/>
-    <param name="inbound-late-negotiation" value="true"/>
-    <param name="disable-transcoding" value="true"/>
-
-    <param name="ext-rtp-ip" value="$${local_ip_v4}"/>
-    <param name="rtp-timer-name" value="soft"/>
-    <param name="rtp-ip" value="$${local_ip_v4}"/>
-    <param name="require-secure-rtp" value="true"/>
-
-    <param name="rfc2833-pt" value="101"/>
-    <param name="liberal-dtmf" value="true"/>
-    <param name="dtmf-duration" value="2000"/>
-
-    <param name="auth-calls" value="true"/>
-    <param name="force-register-domain" value="{{ domain }}"/>
-    <param name="log-auth-failures" value="true"/>
-    <param name="manage-presence" value="false"/>
-
-    <param name="dialplan" value="XML"/>
-    <param name="context" value="{{ domain }}"/>
-
-  </settings>
-
-</profile>
+    </configuration>
+  </section>
+</document>

@@ -8,11 +8,15 @@
 
       <profiles>
         {% for intercom in intercoms %}
-        {% with domain=intercom.domain port=intercom.port %}
+        {% with intercom=intercom %}
 {% include "sofia/intercom.xml" %}
         {% endwith %}
         {% endfor %}
-        <!-- Add gateways. -->
+        {% for gateway in gateways %}
+        {% with gateway=gateway %}
+{% include "sofia/gateway.xml" %}
+        {% endwith %}
+        {% endfor %}
       </profiles>
 
     </configuration>

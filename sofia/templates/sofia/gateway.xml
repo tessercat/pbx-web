@@ -1,0 +1,53 @@
+<profile name="{{ gateway.domain }}">
+
+  <aliases>
+  </aliases>
+
+  <gateways>
+    <gateway name="{{ gateway.domain }}">
+      <param name="register" value="true"/>
+      <param name="register-transport" value="tls"/>
+      <param name="expire-seconds" value="120"/>
+      <param name="username" value="{{ gateway.username }}"/>
+      <param name="password" value="{{ gateway.password }}"/>
+      <param name="proxy" value="{{ gateway.proxy }}"/>
+      <param name="realm" value="{{ gateway.realm }}"/>
+      <param name="sip_cid_type" value="rpid"/>
+    </gateway>
+  </gateways>
+
+  <domains>
+  </domains>
+
+  <settings>
+
+    <param name="ext-sip-ip" value="$${local_ip_v4}"/>
+    <param name="tls" value="true"/>
+    <param name="tls-only" value="true"/>
+    <param name="tls-sip-port" value="{{ gateway.port }}"/>
+    <param name="tls-version" value="tlsv1.2"/>
+
+    <param name="codec-prefs" value="PCMU"/>
+    <param name="inbound-late-negotiation" value="true"/>
+    <param name="disable-transcoding" value="true"/>
+
+    <param name="ext-rtp-ip" value="$${local_ip_v4}"/>
+    <param name="rtp-timer-name" value="soft"/>
+    <param name="rtp-ip" value="$${local_ip_v4}"/>
+    <param name="require-secure-rtp" value="true"/>
+
+    <param name="rfc2833-pt" value="101"/>
+    <param name="liberal-dtmf" value="true"/>
+    <param name="dtmf-duration" value="2000"/>
+
+    <param name="auth-calls" value="false"/>
+    <param name="log-auth-failures" value="true"/>
+    <param name="force-register-domain" value="{{ gateway.domain }}"/>
+    <param name="manage-presence" value="false"/>
+
+    <param name="dialplan" value="XML"/>
+    <param name="context" value="{{ gateway.domain }}"/>
+
+  </settings>
+
+</profile>

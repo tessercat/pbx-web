@@ -1,10 +1,5 @@
 """ Common app config module. """
-from fnmatch import fnmatch
-import logging
-import os
-import sys
 from django.apps import AppConfig
-from django.utils.module_loading import autodiscover_modules
 
 
 common_settings = {}
@@ -17,7 +12,12 @@ class CommonConfig(AppConfig):
     def ready(self):
         """ Init app on ready. """
         # pylint: disable=import-outside-toplevel
+        from fnmatch import fnmatch
+        import logging
+        import os
+        import sys
         from django.conf import settings
+        from django.utils.module_loading import autodiscover_modules
 
         # Autodiscover protected paths configuration.
         autodiscover_modules('protected_paths')

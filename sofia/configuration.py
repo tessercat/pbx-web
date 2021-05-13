@@ -1,44 +1,43 @@
 """ Sofia app config request handler module. """
+from django.conf import settings
 from django.shortcuts import get_object_or_404
 from configuration.registries import (
     ConfigurationHandler,
     register_configuration_handler
 )
-from sofia.models import IntercomProfile  # , Gateway
+from sofia.models import IntercomProfile, GatewayProfile
 
 
 class SofiaConfigHandler(ConfigurationHandler):
     """ Sofia profile config request handler. """
 
     def process(self, request):
-        """ Return template/context. """
+        """ Return template/context to configure mod_sofia. """
         # self.logger.info(request.POST.dict())
-        profile = request.POST.get('profile')
-        if profile:
+        domain = request.POST.get('profile')
+        if domain:
 
-            # Distinguish between gateway/intercom profile requests.
-            # Add gateways.
-
-            # Intercom profile request.
-            obj = get_object_or_404(IntercomProfile, domain=profile)
-            template = 'sofia/intercom.conf.xml'
-            context = {
-                'domain': obj.domain,
-                'port': obj.port,
-            }
+            # The profile thread has requested its own configuration.
+            try:
+                intercom = IntercomProfile.objects.get(domain=domain)
+                template = 'sofia/intercom.conf.xml'
+                context = {'intercom': intercom}
+            except IntercomProfile.DoesNotExist:
+                gateway = get_object_or_404(GatewayProfile, domain=domain)
+                template = 'sofia/gateway.conf.xml'
+                context = {
+                    'gateway': gateway,
+                    'hostname': settings.PBX_HOSTNAME
+                }
             # self.log_rendered(request, template, context)
             return template, context
 
         # No profile specified in POST. Return all profiles.
-        intercoms = []
-        for obj in IntercomProfile.objects.all():
-            intercoms.append({
-                'domain': obj.domain,
-                'port': obj.port,
-            })
         template = 'sofia/sofia.conf.xml'
-        context = {'intercoms': intercoms}
-        # Add gateways to context.
+        context = {
+            'intercoms': IntercomProfile.objects.all(),
+            'gateways': GatewayProfile.objects.all()
+        }
         # self.log_rendered(request, template, context)
         return template, context
 

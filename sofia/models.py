@@ -17,14 +17,20 @@ class SofiaProfile(models.Model):
 
 
 class IntercomProfile(SofiaProfile):
-    """ An intercom profile with SipLines and Extensions. """
+    """ A profile with IntercomLines and Extensions. """
 
 
 class GatewayProfile(SofiaProfile):
-    """ A gateway profile with DidNumbers. """
+    """ A profile with a gateway, AclAddresses and DidNumbers. """
+    username = models.CharField(max_length=50)
+    password = models.CharField(max_length=50)
+    proxy = models.CharField(max_length=50)
+    realm = models.CharField(max_length=50)
 
 
-class SipLine(models.Model):
+# IntercomProfile relations
+
+class IntercomLine(models.Model):
     """ A named IntercomProfile username/password registration. """
 
     class Meta:
@@ -34,7 +40,6 @@ class SipLine(models.Model):
                 fields=['username', 'intercom']
             ),
         ]
-        verbose_name = 'SIP line'
 
     # Validate caller_name as whetever CNAM allows.
     # Autogenerate username/password?
@@ -84,9 +89,21 @@ class Extension(models.Model):
     )
 
     def __str__(self):
-        return '%s %s' % (
-            self.intercom.domain.capitalize(), self.number
-        )
+        return '%s %s' % (self.intercom.domain.capitalize(), self.number)
+
+
+# GatewayProfile relations
+
+class AclAddress(models.Model):
+    """ An IP address for a GatewayProfile. """
+    address = models.GenericIPAddressField()
+    gateway = models.ForeignKey(
+        GatewayProfile,
+        on_delete=models.CASCADE
+    )
+
+    def __str__(self):
+        return '%s %s' % (self.gateway.domain.capitalize(), self.address)
 
 
 class DidNumber(models.Model):
@@ -98,9 +115,10 @@ class DidNumber(models.Model):
     number = models.CharField(max_length=50)
     gateway = models.ForeignKey(
         GatewayProfile,
+        blank=True,
         null=True,
         on_delete=models.CASCADE
     )
 
     def __str__(self):
-        return '%s %s' % (self.gateway.domain, self.number)
+        return '%s %s' % (self.gateway.domain.capitalize(), self.number)

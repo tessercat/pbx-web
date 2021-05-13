@@ -2,7 +2,7 @@
 from django.conf import settings
 from django.contrib import admin
 from sofia.models import (
-    IntercomProfile, SipLine, Extension,
+    IntercomProfile, IntercomLine, Extension,
     GatewayProfile, DidNumber
 )
 
@@ -39,9 +39,9 @@ class IntercomAdmin(admin.ModelAdmin):
         return False
 
 
-@admin.register(SipLine)
-class SipLineAdmin(admin.ModelAdmin):
-    """ SipLine model admin tweaks. """
+@admin.register(IntercomLine)
+class IntercomLineAdmin(admin.ModelAdmin):
+    """ IntercomLine model admin tweaks. """
 
     # Add links to call groups and page groups.
 
