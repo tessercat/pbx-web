@@ -7,7 +7,7 @@ def accept(transport, start, end, src=None):
     """ Allow IPv4 and IPv6 traffic to the transport/port-range. """
     response = httpx.post(
         'http://localhost:%s/iptables/input/accept' % (
-            settings.FIREWALL_PORT,
+            settings.PORTS['firewall'],
         ),
         data={
             'action': 'add',
@@ -25,7 +25,7 @@ def add_admin(address):
 
     # Set the entry address.
     response = httpx.post(
-        'http://localhost:%s/ipset/admin' % settings.FIREWALL_PORT,
+        'http://localhost:%s/ipset/admin' % settings.PORTS['firewall'],
         data={'address': address}
     )
     response.raise_for_status()

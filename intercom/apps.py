@@ -1,9 +1,32 @@
+""" Intercom app config module. """
+from django.apps import AppConfig
+
+
+class IntercomConfig(AppConfig):
+    """ Intercom app config. """
+    name = 'intercom'
+
+    def ready(self):
+        """ Config on app ready. """
+        # pylint: disable=import-outside-toplevel
+        import sys
+
+        # Open ports
+        if sys.argv[-1] == 'project.asgi:application':
+            from common import firewall
+            from intercom.models import Intercom
+
+            for intercom in Intercom.objects.all():
+                firewall.accept(
+                    'tcp',
+                    intercom.port,
+                    intercom.port,
+                )
 """ Action app config module. """
 import logging
 from fnmatch import fnmatch
 import os
 from django.apps import AppConfig
-from django.db.models import signals
 
 
 action_settings = {}
@@ -17,9 +40,7 @@ class ActionConfig(AppConfig):
         """ Init app on ready. """
         # pylint: disable=import-outside-toplevel
         from django.conf import settings
-        from action.models import (
-            Action, post_save_handler, post_delete_handler
-        )
+        from action.models import Action
 
         # Configure static files.
         logger = logging.getLogger('django.server')
@@ -51,8 +72,6 @@ class ActionConfig(AppConfig):
         # Configure action_names.
         action_names = []
         for action in Action.__subclasses__():
-            signals.post_save.connect(post_save_handler, action)
-            signals.post_delete.connect(post_delete_handler, action)
             action_names.append(action._meta.model_name)
         action_settings['action_names'] = action_names
         logger.info('%s subclasses %s', self.name, ' '.join(action_names))

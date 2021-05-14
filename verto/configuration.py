@@ -13,7 +13,7 @@ class VertoConfigHandler(ConfigurationHandler):
         """ Return template and context. """
         template = 'verto/verto.conf.xml'
         context = {
-            'verto_port': settings.VERTO_PORT,
+            'verto_port': settings.PORTS['verto'],
         }
         return template, context
 

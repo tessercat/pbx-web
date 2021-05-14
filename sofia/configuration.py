@@ -5,7 +5,8 @@ from configuration.registries import (
     ConfigurationHandler,
     register_configuration_handler
 )
-from sofia.models import IntercomProfile, GatewayProfile
+from intercom.models import Intercom
+from gateway.models import Gateway
 
 
 class SofiaConfigHandler(ConfigurationHandler):
@@ -19,11 +20,11 @@ class SofiaConfigHandler(ConfigurationHandler):
 
             # The profile thread has requested its own configuration.
             try:
-                intercom = IntercomProfile.objects.get(domain=domain)
+                intercom = Intercom.objects.get(domain=domain)
                 template = 'sofia/intercom.conf.xml'
                 context = {'intercom': intercom}
-            except IntercomProfile.DoesNotExist:
-                gateway = get_object_or_404(GatewayProfile, domain=domain)
+            except Intercom.DoesNotExist:
+                gateway = get_object_or_404(Gateway, domain=domain)
                 template = 'sofia/gateway.conf.xml'
                 context = {
                     'gateway': gateway,
@@ -35,8 +36,8 @@ class SofiaConfigHandler(ConfigurationHandler):
         # No profile specified in POST. Return all profiles.
         template = 'sofia/sofia.conf.xml'
         context = {
-            'intercoms': IntercomProfile.objects.all(),
-            'gateways': GatewayProfile.objects.all()
+            'intercoms': Intercom.objects.all(),
+            'gateways': Gateway.objects.all()
         }
         # self.log_rendered(request, template, context)
         return template, context

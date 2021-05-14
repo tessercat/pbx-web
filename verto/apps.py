@@ -16,6 +16,6 @@ class VertoConfig(AppConfig):
 
             firewall.accept(
                 'udp',
-                settings.STUN_PORT,
-                settings.STUN_PORT,
+                settings.PORTS['stun'],
+                settings.PORTS['stun'],
             )

@@ -1,22 +1,22 @@
-""" Action app URL config. """
+""" Extension app URL config. """
 from django.urls import path
-from action.views import IndexView, ClientView, SessionView
+from extension.views import IndexView, ClientView, SessionView
 
 
 urlpatterns = [
     path(
         '',
         IndexView.as_view(),
-        name='pbx-action-index'
+        name='pbx-extension-index'
     ),
     path(
         '<uuid:channel_id>',
         ClientView.as_view(),
-        name='pbx-action-client'
+        name='pbx-extension-client'
     ),
     path(
         '<uuid:channel_id>/session',
         SessionView.as_view(),
-        name='pbx-action-session'
+        name='pbx-extension-session'
     ),
 ]

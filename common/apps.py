@@ -41,6 +41,6 @@ class CommonConfig(AppConfig):
 
             firewall.accept(
                 'udp',
-                settings.RTP_PORT_START,
-                settings.RTP_PORT_END,
+                settings.PORTS['rtp_start'],
+                settings.PORTS['rtp_end']
             )

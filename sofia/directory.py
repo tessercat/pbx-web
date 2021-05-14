@@ -3,14 +3,14 @@ from django.db.utils import OperationalError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from directory.registries import DirectoryHandler, register_directory_handler
-from sofia.models import IntercomProfile, IntercomLine
+from intercom.models import Intercom, Line
 
 
 class IntercomAuthHandler(DirectoryHandler):
-    """ Intercom profile directory request handler. """
+    """ Intercom directory request handler. """
 
     def get_directory(self, request, domain):
-        """ Return template/context to auth an IntercomLine registration. """
+        """ Return template/context to auth a Line registration. """
 
         # Reject directory gateway requests.
         purpose = request.POST.get('purpose')
@@ -19,13 +19,11 @@ class IntercomAuthHandler(DirectoryHandler):
             raise Http404
 
         # Send the line-auth template.
-        intercom = get_object_or_404(IntercomProfile, domain=domain)
+        intercom = get_object_or_404(Intercom, domain=domain)
         user = request.POST.get('user')
         if not user:
             raise Http404
-        line = get_object_or_404(
-            IntercomLine, username=user, intercom=intercom
-        )
+        line = get_object_or_404(Line, username=user, intercom=intercom)
         template = 'sofia/line-auth.xml'
         context = {
             'domain': domain,
@@ -37,7 +35,7 @@ class IntercomAuthHandler(DirectoryHandler):
 
 # These don't load until tables exist.
 try:
-    for _intercom in IntercomProfile.objects.all():
+    for _intercom in Intercom.objects.all():
         register_directory_handler(_intercom.domain, IntercomAuthHandler())
 except OperationalError:
     pass

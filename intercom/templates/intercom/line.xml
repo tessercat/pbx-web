@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="freeswitch/xml">
+  <section name="dialplan">
+    <context name="{{ context }}">
+      <extension name="call">
+        <condition regex="all">
+          <regex field="destination_number" expression="^{{ action.number }}$"/>
+          <action application="bridge" data="{rtp_secure_media=true}${sofia_contact({{ action.line.intercom.domain }}/{{ action.line.username }}@{{ action.hostname }}}"/>
+        </condition>
+      </extension>
+    </context>
+  </section>
+</document>

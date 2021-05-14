@@ -3,10 +3,8 @@ import ast
 import os
 from django.core.management.base import BaseCommand
 from django.conf import settings
-from sofia.models import (
-    IntercomProfile,
-    GatewayProfile, AclAddress
-)
+from intercom.models import Intercom
+from gateway.models import Gateway, AclAddress
 
 
 class Command(BaseCommand):
@@ -20,14 +18,14 @@ class Command(BaseCommand):
         """ CRUD interom objects. """
 
         # Delete intercom profiles.
-        for intercom in IntercomProfile.objects.all():
+        for intercom in Intercom.objects.all():
             if intercom.domain not in intercoms:
                 objects = intercom.delete()
                 print('Deleted intercom', objects, '- reload mod_sofia')
 
         # Add intercom profiles.
         for domain, port in intercoms.items():
-            intercom, created = IntercomProfile.objects.get_or_create(
+            intercom, created = Intercom.objects.get_or_create(
                 domain=domain, port=port
             )
             if created:
@@ -57,21 +55,21 @@ class Command(BaseCommand):
         """ CRUD gateway and ACL address objects. """
 
         # Delete gateway profiles
-        for gateway in GatewayProfile.objects.all():
+        for gateway in Gateway.objects.all():
             if gateway.domain not in gateways:
                 objects = gateway.delete()
                 print('Deleted gateway', objects, '- reload mod_sofia')
                 objects = AclAddress.objects.filter(gateway=gateway).delete()
                 print('Deleted ACL address', objects,
-                      '- restart netfilter-presistent and pbx-web')
+                      '- restart netfilter-persistent and pbx-web')
 
         # Add gateway profiles.
         for domain, data in gateways.items():
             try:
-                gateway = GatewayProfile.objects.get(domain=domain)
+                gateway = Gateway.objects.get(domain=domain)
                 Command.update_gateway(gateway, data)
-            except GatewayProfile.DoesNotExist:
-                gateway = GatewayProfile.objects.create(
+            except Gateway.DoesNotExist:
+                gateway = Gateway.objects.create(
                     domain=domain,
                     port=data['port'],
                     username=data['username'],

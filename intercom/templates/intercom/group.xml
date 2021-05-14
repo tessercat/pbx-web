@@ -5,7 +5,7 @@
       <extension name="call">
         <condition regex="all">
           <regex field="destination_number" expression="^{{ action.number }}$"/>
-          <action application="bridge" data="{rtp_secure_media=true}${sofia_contact({{ action.line.username }}@{{ action.hostname }}}"/>
+          <action application="bridge" data="{rtp_secure_media=true}${sofia_contact({{ action.line.intercom.domain }}/{{ action.line.username }}@{{ action.hostname }}}"/>
         </condition>
       </extension>
     </context>

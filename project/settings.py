@@ -1,43 +1,37 @@
 """ Project settings module. """
+import logging
 import os
 from project import env
 
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-# Required env settings
+# Django globals from env.
 
-SETTINGS = env.get_settings(BASE_DIR)
+django_globals = env.get_settings(BASE_DIR, 'django_globals.py')
 
-ADMINS = SETTINGS['ADMINS']
+ADMINS = django_globals['ADMINS']
 
-FIREWALL_PORT = SETTINGS['FIREWALL_PORT']
+ALLOWED_HOSTS = django_globals['ALLOWED_HOSTS']
 
-PBX_HOSTNAME = SETTINGS['PBX_HOSTNAME']
-
-RTP_PORT_START = SETTINGS['RTP_PORT_START']
-
-RTP_PORT_END = SETTINGS['RTP_PORT_END']
-
-SERVER_EMAIL = SETTINGS['SERVER_EMAIL']
-
-STUN_PORT = SETTINGS['STUN_PORT']
-
-TIME_ZONE = SETTINGS['TIME_ZONE']
-
-VERTO_PORT = SETTINGS['VERTO_PORT']
-
-
-# Other settings.
+INSTALLED_APPS = django_globals['INSTALLED_APPS']
 
 SECRET_KEY = env.get_secret_key(BASE_DIR)
 
-ALLOWED_HOSTS = (
-    PBX_HOSTNAME,
-    'localhost',
-)
+SERVER_EMAIL = django_globals['SERVER_EMAIL']
+
+TIME_ZONE = django_globals['TIME_ZONE']
+
+
+# Custom globals from env.
+
+PORTS = env.get_settings(BASE_DIR, 'ports.py')
+
+PBX_HOSTNAME = django_globals['ALLOWED_HOSTS'][0]
+
+
+# Other custom Django settings.
 
 CSRF_FAILURE_VIEW = 'common.views.custom403'
 
@@ -69,26 +63,6 @@ USE_X_FORWARDED_PORT = True
 
 
 # Application definition
-
-INSTALLED_APPS = [
-    'django_prometheus',
-    'common.apps.CommonConfig',
-    'fsapi.apps.FsapiConfig',
-    'configuration.apps.ConfigurationConfig',
-    'directory.apps.DirectoryConfig',
-    'dialplan.apps.DialplanConfig',
-    'sofia.apps.SofiaConfig',
-    'verto.apps.VertoConfig',
-    'action.apps.ActionConfig',
-    'call.apps.CallConfig',
-    'conference.apps.ConferenceConfig',
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-]
 
 MIDDLEWARE = [
     'common.middleware.ProtectedPathsMiddleware',

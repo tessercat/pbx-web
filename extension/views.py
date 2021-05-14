@@ -1,4 +1,4 @@
-""" Action app views module. """
+""" Extension app views module. """
 from datetime import timedelta
 from uuid import UUID
 from django.conf import settings
@@ -6,46 +6,46 @@ from django.http import Http404, HttpResponseForbidden, JsonResponse
 from django.utils import timezone
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import DetailView, BaseDetailView
-from action.apps import action_settings
+from extension.apps import extension_settings
 from verto.models import Channel, Client
 
 
 class IndexView(TemplateView):
-    """ Action app index view. """
-    template_name = 'action/index.html'
+    """ Extension app index view. """
+    template_name = 'extension/index.html'
 
     def get_context_data(self, **kwargs):
         """ Insert data into template context. """
         context = super().get_context_data(**kwargs)
         context['title'] = settings.PBX_HOSTNAME
-        context['css'] = action_settings.get('css')
+        context['css'] = extension_settings.get('css')
         return context
 
 
 class ClientView(DetailView):
-    """ Action Channel client view. """
+    """ Extension Channel client view. """
     model = Channel
     slug_field = 'channel_id'
     slug_url_kwarg = 'channel_id'
-    template_name = "action/client.html"
+    template_name = "extension/client.html"
 
     def get_context_data(self, **kwargs):
         """ Insert data into template context. """
         context = super().get_context_data(**kwargs)
-        if hasattr(self.object, 'action'):
-            action = self.object.action.get_action()
+        if hasattr(self.object, 'extension'):
+            extension = self.object.extension.get_extension()
         else:
             raise Http404
-        context['title'] = action.name
-        context['stun_port'] = settings.STUN_PORT
-        context['css'] = action_settings.get('css')
-        context['adapter'] = action_settings.get('adapter')
-        context['client'] = action_settings.get('client')
+        context['title'] = extension.name
+        context['stun_port'] = settings.PORTS['stun']
+        context['css'] = extension_settings.get('css')
+        context['adapter'] = extension_settings.get('adapter')
+        context['client'] = extension_settings.get('client')
         return context
 
 
 class SessionView(BaseDetailView):
-    """ Action Channel client session registration view. """
+    """ Extension Channel client session registration view. """
     model = Channel
     slug_field = 'channel_id'
     slug_url_kwarg = 'channel_id'

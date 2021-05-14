@@ -30,7 +30,7 @@ class Client(models.Model):
         editable=False,
     )
     channel = models.ForeignKey(
-        Channel,
+        'verto.Channel',
         on_delete=models.CASCADE,
     )
     session_id = models.UUIDField(
