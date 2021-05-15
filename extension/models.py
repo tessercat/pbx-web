@@ -13,8 +13,8 @@ class Codec(models.TextChoices):
     VIDEO = 'OPUS,VP8,H264', 'HQ audio and video - Internet only'
 
 
-class Extension(models.Model):
-    """ An named but un-addressed dialplan extension. """
+class Action(models.Model):
+    """ An named but un-addressed dialplan action. """
 
     def channel_link(self):
         """ Return a link to the channel. """
@@ -28,7 +28,7 @@ class Extension(models.Model):
 
     def get_extension(self):
         """ Return the subclassed object. """
-        for name in extension_settings['extension_names']:
+        for name in extension_settings['action_names']:
             if hasattr(self, name):
                 return getattr(self, name)
         return None
@@ -63,81 +63,30 @@ def post_delete_handler(sender, instance, **kwargs):
     instance.channel.delete()
 
 
-# Extensions that match a specfic Intercom number.
-
-class IntercomNumber(models.Model):
-    """ An Intercom and a unique number. """
+class Extension(models.Model):
+    """ An Intercom and a unique extension number. """
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
                 name='%(app_label)s_%(class)s_is_unique',
-                fields=['number', 'intercom']
+                fields=['extension', 'intercom']
             ),
         ]
 
     name = models.CharField(max_length=15)
-    number = models.CharField(max_length=50)
+    extension = models.CharField(max_length=50)
     intercom = models.ForeignKey(
         'intercom.Intercom',
         on_delete=models.CASCADE
     )
 
     def __str__(self):
-        return f'{self.intercom} - {self.number} {self.name}'
+        return f'{self.intercom} - {self.extension} {self.name}'
 
 
-class LineCall(Extension):
-    """ An extension that calls a single intercom Line. """
-    template = 'intercom/line.xml'
-    number = models.OneToOneField(
-        'extension.IntercomNumber',
-        on_delete=models.CASCADE
-    )
-    line = models.OneToOneField(
-        'intercom.Line',
-        on_delete=models.CASCADE
-    )
-
-
-class GroupCall(Extension):
-    """ An extension that sim-rings a group of Lines. """
-    template = 'intercom/group.xml'
-    number = models.OneToOneField(
-        'extension.IntercomNumber',
-        on_delete=models.CASCADE
-    )
-    lines = models.ManyToManyField(
-        'intercom.Line',
-    )
-
-
-class OutboundCall(Extension):
-    """ A numbered Intercom Extension with a Gateway. """
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                name='%(app_label)s_%(class)s_is_unique',
-                fields=['number', 'gateway']
-            ),
-        ]
-
-    template = 'intercom/outbound.xml'
-    number = models.OneToOneField(
-        'extension.IntercomNumber',
-        on_delete=models.CASCADE
-    )
-    gateway = models.ForeignKey(
-        'gateway.Gateway',
-        on_delete=models.CASCADE
-    )
-
-
-# Extensions that match a regular expression pattern.
-
-class IntercomMatch(models.Model):
-    """ An Intercom and a unique pattern. """
+class MatchExtension(models.Model):
+    """ An Intercom and a unique extension pattern. """
 
     class Meta:
         constraints = [
@@ -155,44 +104,5 @@ class IntercomMatch(models.Model):
     pattern = models.CharField(max_length=50)
     intercom = models.ForeignKey(
         'intercom.Intercom',
-        on_delete=models.CASCADE
-    )
-
-
-class OutboundMatchCall(Extension):
-    """ A pattern-matching Intercom Extension with a Gateway. """
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                name='%(app_label)s_%(class)s_is_unique',
-                fields=['pattern', 'gateway']
-            ),
-        ]
-
-    def matches(self, number):
-        """ Return True if the number matches this pattern. """
-        return False
-
-    template = 'intercom/outbound.xml'
-    pattern = models.OneToOneField(
-        'extension.IntercomMatch',
-        on_delete=models.CASCADE
-    )
-    gateway = models.ForeignKey(
-        'gateway.Gateway',
-        on_delete=models.CASCADE
-    )
-
-
-class InboundTransfer(Extension):
-    """ An Extension to transfer a Gateway call to an Intercom context. """
-    template = 'gateway/transfer.xml'
-    number = models.OneToOneField(
-        'gateway.DidNumber',
-        on_delete=models.CASCADE
-    )
-    transfer = models.ForeignKey(
-        'extension.IntercomNumber',
         on_delete=models.CASCADE
     )

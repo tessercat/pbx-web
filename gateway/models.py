@@ -49,4 +49,4 @@ class DidNumber(models.Model):
     )
 
     def __str__(self):
-        return f'{self.gateway} - {self.number} {self.name}'
+        return f'{self.gateway} - {self.extension} {self.name}'

@@ -3,7 +3,7 @@ from django.db.utils import OperationalError
 from django.http import Http404
 from dialplan.registries import register_dialplan_handler
 from extension.dialplan import ExtensionHandler
-from extension.models import IntercomNumber, IntercomMatch
+from extension.models import Extension, MatchExtension
 from intercom.models import Intercom
 
 
@@ -18,14 +18,14 @@ class IntercomHandler(ExtensionHandler):
         try:
 
             # Match the number exactly.
-            obj = IntercomNumber.objects.get(
+            obj = Extension.objects.get(
                 number=number,
                 intercom__domain=context
             )
-        except IntercomNumber.DoesNotExist as err:
+        except Extension.DoesNotExist as err:
 
             # Match the number to a pattern.
-            patterns = IntercomMatch.objects.filter(
+            patterns = MatchExtension.objects.filter(
                 intercom__domain=context
             )
             obj = None
