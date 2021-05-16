@@ -43,3 +43,4 @@ class AclAddressAdmin(admin.ModelAdmin):
 @admin.register(DidNumber)
 class DidNumberAdmin(admin.ModelAdmin):
     """ DidNumber model admin tweaks. """
+    list_display = ('number', 'gateway')

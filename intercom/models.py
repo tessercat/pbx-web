@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models import signals
 from django.dispatch import receiver
 from django.utils.html import format_html
+from dialplan.apps import dialplan_settings
 from sofia.models import SofiaProfile
 from verto.models import Channel
 
@@ -64,6 +65,13 @@ class Extension(models.Model):
                 self.channel
             )
         )
+
+    def get_action(self):
+        """ Return the Extension's subclassed Action object. """
+        for name in dialplan_settings['action_names']:
+            if hasattr(self, name):
+                return getattr(self, name)
+        return None
 
     def matches(self, number):
         """ Return True for a PCRE extension and the number matches. """

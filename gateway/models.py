@@ -41,7 +41,6 @@ class DidNumber(models.Model):
             ),
         ]
 
-    name = models.CharField(max_length=15)
     number = models.CharField(max_length=50)
     gateway = models.ForeignKey(
         'gateway.Gateway',
@@ -49,4 +48,4 @@ class DidNumber(models.Model):
     )
 
     def __str__(self):
-        return f'{self.gateway} - {self.extension} {self.name}'
+        return f'{self.gateway} - {self.number}'
