@@ -1,22 +1,22 @@
-""" Extension app URL config. """
+""" Intercom app URL config. """
 from django.urls import path
-from extension.views import IndexView, ClientView, SessionView
+from intercom.views import IndexView, ClientView, SessionView
 
 
 urlpatterns = [
     path(
         '',
         IndexView.as_view(),
-        name='pbx-extension-index'
+        name='pbx-intercom-index'
     ),
     path(
         '<uuid:channel_id>',
         ClientView.as_view(),
-        name='pbx-extension-client'
+        name='pbx-intercom-client'
     ),
     path(
         '<uuid:channel_id>/session',
         SessionView.as_view(),
-        name='pbx-extension-session'
+        name='pbx-intercom-session'
     ),
 ]

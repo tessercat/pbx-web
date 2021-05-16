@@ -1,50 +1,81 @@
 """ Intercom app dialplan request handler module. """
+from uuid import UUID
 from django.db.utils import OperationalError
 from django.http import Http404
+from django.shortcuts import get_object_or_404
+from action.dialplan import ActionHandler
 from dialplan.registries import register_dialplan_handler
-from extension.dialplan import ExtensionHandler
-from extension.models import Extension, MatchExtension
-from intercom.models import Intercom
+from intercom.models import Intercom, Extension
+from verto.models import Client
 
 
-class IntercomHandler(ExtensionHandler):
-    """ Handle an intercom context dialplan request. """
+class ExtensionActionHandler(ActionHandler):
+    """ Handle an Extension Action request. """
 
-    def get_extension(self, request, context):
-        """ Return an IntercomExtension. """
+    def get_action(self, request, context):
+        """ Return an Extension Action. """
         number = request.POST.get('Caller-Destination-Number')
         if not number:
             raise Http404
         try:
 
             # Match the number exactly.
-            obj = Extension.objects.get(
+            extension = Extension.objects.get(
+                intercom__domain=context,
                 number=number,
-                intercom__domain=context
             )
-        except Extension.DoesNotExist as err:
+        except Extension.DoesNotExist:
 
-            # Match the number to a pattern.
-            patterns = MatchExtension.objects.filter(
-                intercom__domain=context
+            # Match the number to an expression.
+            extension = None
+            extensions = Extension.objects.filter(
+                intercom__domain=context,
+                pcre=True,
             )
-            obj = None
-            for pattern in patterns:
-                if pattern.matches(number):
-                    obj = pattern
+            for ext in extensions:
+                if ext.matches(number):
+                    extension = ext
                     break
-            if not obj:
-                raise Http404 from err
 
-        # Return the extension.
-        if getattr(obj, 'extension'):
-            return obj.extension.get_extension()
+        # Return the extension's Action.
+        if hasattr(extension, 'action'):
+            return extension.action.get_action()
         raise Http404
+
+
+class ClientActionHandler(ActionHandler):
+    """ Handle a Client Action request. """
+
+    def get_action(self, request, context):
+        """ Return a Client's Action. """
+        # pylint: disable=unused-argument
+
+        # Get Client. Ignore destination number.
+        client_id = request.POST.get('variable_user_name')
+        if not client_id:
+            raise Http404
+        try:
+            UUID(client_id, version=4)
+        except (ValueError) as err:
+            raise Http404 from err
+        client = get_object_or_404(Client, client_id=client_id)
+
+        # Return the Client's Channel's Extension's Action.
+        if hasattr(client.channel, 'extension'):
+            extension = client.channel.extension
+
+            # And Actions have an Extension field.
+            if hasattr(extension, 'action'):
+                return extension.action.get_action()
+        raise Http404
+
+
+register_dialplan_handler('verto', ClientActionHandler())
 
 
 # These fail to load until tables exist.
 try:
     for _intercom in Intercom.objects.all():
-        register_dialplan_handler(_intercom.domain, IntercomHandler())
+        register_dialplan_handler(_intercom.domain, ExtensionActionHandler())
 except OperationalError:
     pass

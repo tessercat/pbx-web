@@ -12,11 +12,10 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='SofiaProfile',
+            name='Action',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('port', models.IntegerField(unique=True)),
-                ('domain', models.SlugField(unique=True)),
+                ('name', models.CharField(max_length=15)),
             ],
         ),
     ]

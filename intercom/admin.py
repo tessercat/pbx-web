@@ -1,7 +1,7 @@
 """ Intercom app admin module. """
 from django.conf import settings
 from django.contrib import admin
-from intercom.models import Intercom, Line
+from intercom.models import Intercom, Line, Extension
 
 
 @admin.register(Intercom)
@@ -40,3 +40,9 @@ class LineAdmin(admin.ModelAdmin):
         'username', 'password',
         'registered'
     )
+
+
+@admin.register(Extension)
+class ExtensionAdmin(admin.ModelAdmin):
+    """ Extension model admin tweaks. """
+    exclude = ('channel',)

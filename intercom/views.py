@@ -6,46 +6,46 @@ from django.http import Http404, HttpResponseForbidden, JsonResponse
 from django.utils import timezone
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import DetailView, BaseDetailView
-from extension.apps import extension_settings
+from intercom.apps import intercom_settings
 from verto.models import Channel, Client
 
 
 class IndexView(TemplateView):
-    """ Extension app index view. """
-    template_name = 'extension/index.html'
+    """ Intercom app index view. """
+    template_name = 'intercom/index.html'
 
     def get_context_data(self, **kwargs):
         """ Insert data into template context. """
         context = super().get_context_data(**kwargs)
         context['title'] = settings.PBX_HOSTNAME
-        context['css'] = extension_settings.get('css')
+        context['css'] = intercom_settings.get('css')
         return context
 
 
 class ClientView(DetailView):
-    """ Extension Channel client view. """
+    """ Channel client view. """
     model = Channel
     slug_field = 'channel_id'
     slug_url_kwarg = 'channel_id'
-    template_name = "extension/client.html"
+    template_name = 'intercom/client.html'
 
     def get_context_data(self, **kwargs):
         """ Insert data into template context. """
         context = super().get_context_data(**kwargs)
         if hasattr(self.object, 'extension'):
-            extension = self.object.extension.get_extension()
+            extension = self.object.extension
         else:
             raise Http404
         context['title'] = extension.name
         context['stun_port'] = settings.PORTS['stun']
-        context['css'] = extension_settings.get('css')
-        context['adapter'] = extension_settings.get('adapter')
-        context['client'] = extension_settings.get('client')
+        context['css'] = intercom_settings.get('css')
+        context['adapter'] = intercom_settings.get('adapter')
+        context['client'] = intercom_settings.get('client')
         return context
 
 
 class SessionView(BaseDetailView):
-    """ Extension Channel client session registration view. """
+    """ Channel client session registration view. """
     model = Channel
     slug_field = 'channel_id'
     slug_url_kwarg = 'channel_id'

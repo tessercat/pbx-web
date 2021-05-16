@@ -17,7 +17,7 @@
             <param name="tls-version" value="tlsv1.2"/>
             <param name="ext-sip-ip" value="$${local_ip_v4}"/>
 
-            <param name="codec-prefs" value="OPUS,PCMU"/>
+            <param name="codec-prefs" value="PCMU"/>
             <param name="disable-transcoding" value="true"/>
             <param name="inbound-late-negotiation" value="true"/>
 

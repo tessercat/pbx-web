@@ -4,7 +4,7 @@
     <domain name="verto">
       <user id="{{ client_id }}">
         <params>
-          <param name="jsonrpc-allowed-methods" value="{{ extension.methods|join:',' }}"/>
+          <param name="jsonrpc-allowed-methods" value="echo,verto.invite,verto.attach"/>
           <param name="password" value="{{ password }}"/>
         </params>
       </user>

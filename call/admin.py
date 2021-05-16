@@ -1,32 +1,23 @@
 """ Extension app admin module. """
 from django.contrib import admin
-from extension.admin import ActionAdmin
-from call.models import (
-    LineCall, GroupCall, OutboundCall, OutboundMatchCall,
-    InboundTransfer
-)
+from call.models import LineCall, GroupCall, OutboundCall, InboundTransfer
 
 
 @admin.register(LineCall)
-class LineCallAdmin(ActionAdmin):
+class LineCallAdmin(admin.ModelAdmin):
     """ LineCall model admin tweaks. """
 
 
 @admin.register(GroupCall)
-class GroupCallAdmin(ActionAdmin):
+class GroupCallAdmin(admin.ModelAdmin):
     """ GroupCall model admin tweaks. """
 
 
 @admin.register(OutboundCall)
-class OutbounCallAdmin(ActionAdmin):
+class OutboundCallAdmin(admin.ModelAdmin):
     """ GroupCall model admin tweaks. """
 
 
-@admin.register(OutboundMatchCall)
-class OutboundMatchCallAdmin(ActionAdmin):
-    """ OutboundMatchCall model admin tweaks. """
-
-
 @admin.register(InboundTransfer)
-class InboundTransferAdmin(ActionAdmin):
+class InboundTransferAdmin(admin.ModelAdmin):
     """ InboundTransfer model admin tweaks. """

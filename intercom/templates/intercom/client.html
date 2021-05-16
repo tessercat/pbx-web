@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block style %}
-    <link rel="stylesheet" href="{% static 'extension/css/'|add:css %}">
+    <link rel="stylesheet" href="{% static 'intercom/css/'|add:css %}">
 {% endblock %}
 
 {% block content %}
@@ -23,7 +23,7 @@
         <label id="data-in"></label>
         <label id="data-out"></label>
       </article>
-      <script defer src="{% static 'extension/js/'|add:adapter %}"></script>
-      <script defer src="{% static 'extension/js/'|add:client %}"></script>
+      <script defer src="{% static 'intercom/js/'|add:adapter %}"></script>
+      <script defer src="{% static 'intercom/js/'|add:client %}"></script>
     </main>
 {% endblock %}
