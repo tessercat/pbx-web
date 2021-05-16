@@ -3,13 +3,12 @@ from uuid import UUID
 from django.db.utils import OperationalError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from action.dialplan import ActionHandler
-from dialplan.registries import register_dialplan_handler
+from dialplan.registries import DialplanHandler, register_dialplan_handler
 from intercom.models import Intercom, Extension
 from verto.models import Client
 
 
-class ExtensionActionHandler(ActionHandler):
+class ExtensionDialplanHandler(DialplanHandler):
     """ Handle an Extension Action request. """
 
     def get_action(self, request, context):
@@ -43,7 +42,17 @@ class ExtensionActionHandler(ActionHandler):
         raise Http404
 
 
-class ClientActionHandler(ActionHandler):
+# These fail to load until tables exist.
+try:
+    for _intercom in Intercom.objects.all():
+        register_dialplan_handler(
+            _intercom.domain, ExtensionDialplanHandler()
+        )
+except OperationalError:
+    pass
+
+
+class ClientDialplanHandler(DialplanHandler):
     """ Handle a Client Action request. """
 
     def get_action(self, request, context):
@@ -70,12 +79,4 @@ class ClientActionHandler(ActionHandler):
         raise Http404
 
 
-register_dialplan_handler('verto', ClientActionHandler())
-
-
-# These fail to load until tables exist.
-try:
-    for _intercom in Intercom.objects.all():
-        register_dialplan_handler(_intercom.domain, ExtensionActionHandler())
-except OperationalError:
-    pass
+register_dialplan_handler('verto', ClientDialplanHandler())

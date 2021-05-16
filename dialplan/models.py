@@ -1,14 +1,14 @@
-""" Action app models module. """
+""" Dialplan app models module. """
 from django.db import models
-from action.apps import action_settings
+from dialplan.apps import dialplan_settings
 
 
 class Action(models.Model):
-    """ A named but un-addressed dialplan action. """
+    """ A dialplan action superclass/table. """
 
     def get_action(self):
         """ Return the subclassed object. """
-        for name in action_settings['action_names']:
+        for name in dialplan_settings['action_names']:
             if hasattr(self, name):
                 return getattr(self, name)
         return None

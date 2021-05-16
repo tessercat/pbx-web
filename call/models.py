@@ -1,6 +1,6 @@
 """ Call app models module. """
 from django.db import models
-from action.models import Action
+from dialplan.models import Action
 
 
 class LineCall(Action):

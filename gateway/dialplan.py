@@ -2,12 +2,11 @@
 from django.db.utils import OperationalError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from dialplan.registries import register_dialplan_handler
-from action.dialplan import ActionHandler
+from dialplan.registries import DialplanHandler, register_dialplan_handler
 from gateway.models import Gateway, DidNumber
 
 
-class GatewayActionHandler(ActionHandler):
+class GatewayDialplanHandler(DialplanHandler):
     """ Handle an gateway context dialplan request. """
 
     def get_action(self, request, context):
@@ -30,6 +29,6 @@ class GatewayActionHandler(ActionHandler):
 # These fail to load until tables exist.
 try:
     for _gateway in Gateway.objects.all():
-        register_dialplan_handler(_gateway.domain, GatewayActionHandler())
+        register_dialplan_handler(_gateway.domain, GatewayDialplanHandler())
 except OperationalError:
     pass
