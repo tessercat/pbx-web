@@ -1,6 +1,6 @@
 """ Gateway app admin module. """
 from django.contrib import admin
-from gateway.models import Gateway, AclAddress, DidNumber
+from gateway.models import Gateway, AclAddress, DidNumber, InboundTransfer
 
 
 @admin.register(Gateway)
@@ -43,4 +43,10 @@ class AclAddressAdmin(admin.ModelAdmin):
 @admin.register(DidNumber)
 class DidNumberAdmin(admin.ModelAdmin):
     """ DidNumber model admin tweaks. """
-    list_display = ('number', 'gateway')
+    list_display = ('phone_number', 'gateway')
+
+
+@admin.register(InboundTransfer)
+class InboundTransferAdmin(admin.ModelAdmin):
+    """ InboundTransfer model admin tweaks. """
+    list_display = ('did_number', 'extension')

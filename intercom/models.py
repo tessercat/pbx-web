@@ -5,6 +5,7 @@ from django.db.models import signals
 from django.dispatch import receiver
 from django.utils.html import format_html
 from dialplan.apps import dialplan_settings
+from dialplan.models import Action
 from sofia.models import SofiaProfile
 from verto.models import Channel
 
@@ -33,7 +34,7 @@ class Line(models.Model):
     )
     password = models.CharField(max_length=50)
     intercom = models.ForeignKey(
-        'intercom.Intercom',
+        Intercom,
         on_delete=models.CASCADE
     )
     registered = models.DateTimeField(
@@ -52,7 +53,7 @@ class Extension(models.Model):
         constraints = [
             models.UniqueConstraint(
                 name='%(app_label)s_%(class)s_is_unique',
-                fields=['extension', 'intercom']
+                fields=['extension_number', 'intercom']
             ),
         ]
 
@@ -78,13 +79,13 @@ class Extension(models.Model):
         return False
 
     name = models.CharField(max_length=15)
-    extension = models.CharField(max_length=50)
-    pcre = models.BooleanField(default=False)
+    extension_number = models.CharField(max_length=50)
     intercom = models.ForeignKey(
-        'intercom.Intercom',
+        Intercom,
         on_delete=models.CASCADE
     )
-    publish = models.BooleanField(default=True)
+    pcre_match = models.BooleanField(default=False)
+    web_enabled = models.BooleanField(default=False)
     channel = models.OneToOneField(
         Channel,
         blank=True,
@@ -93,16 +94,16 @@ class Extension(models.Model):
     )
 
     def __str__(self):
-        return f'{self.intercom} - {self.extension} {self.name}'
+        return f'{self.intercom} - {self.extension_number} {self.name}'
 
 
 @receiver(signals.post_save, sender=Extension)
 def post_save_handler(sender, instance, created, **kwargs):
     """ Add/delete channel on instance save. """
     # pylint: disable=unused-argument
-    if instance.channel and not instance.publish:
+    if instance.channel and not instance.web_enabled:
         instance.channel.delete()
-    elif instance.publish and not instance.channel:
+    elif instance.web_enabled and not instance.channel:
         instance.channel = Channel.objects.create()
         instance.save()
 
@@ -112,3 +113,34 @@ def post_delete_handler(sender, instance, **kwargs):
     """ Delete channel on instance delete. """
     # pylint: disable=unused-argument
     instance.channel.delete()
+
+
+class CallGroup(Action):
+    """ A call Action to a group of Lines. """
+    template = 'intercom/group.xml'
+    intercom_action = True
+
+    extension = models.OneToOneField(
+        Extension,
+        on_delete=models.CASCADE,
+    )
+    lines = models.ManyToManyField(Line)
+
+
+class OutboundCall(Action):
+    """ A call Action out through a Gateway. """
+    template = 'intercom/outbound.xml'
+    intercom_action = True
+
+    extension = models.OneToOneField(
+        Extension,
+        on_delete=models.CASCADE,
+    )
+    phone_number = models.CharField(
+        blank=True,
+        max_length=50,
+    )
+    gateway = models.ForeignKey(
+        'gateway.Gateway',
+        on_delete=models.CASCADE
+    )

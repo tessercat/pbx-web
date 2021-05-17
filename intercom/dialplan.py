@@ -29,7 +29,7 @@ class ExtensionDialplanHandler(DialplanHandler):
             extension = None
             extensions = Extension.objects.filter(
                 intercom__domain=context,
-                pcre=True,
+                pcre_match=True,
             )
             for ext in extensions:
                 if ext.matches(number):
@@ -38,7 +38,7 @@ class ExtensionDialplanHandler(DialplanHandler):
 
         # Return the extension's Action.
         if hasattr(extension, 'action'):
-            return extension.action.get_action()
+            return extension.get_action()
         raise Http404
 
 
@@ -75,7 +75,7 @@ class ClientDialplanHandler(DialplanHandler):
 
             # And Actions have an Extension field.
             if hasattr(extension, 'action'):
-                return extension.action.get_action()
+                return extension.get_action()
         raise Http404
 
 

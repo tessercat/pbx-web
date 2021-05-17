@@ -1,7 +1,11 @@
 """ Intercom app admin module. """
 from django.conf import settings
 from django.contrib import admin
-from intercom.models import Intercom, Line, Extension
+from intercom.forms import CallGroupForm, OutboundCallForm
+from intercom.models import (
+    Intercom, Line, Extension,
+    CallGroup, OutboundCall
+)
 
 
 @admin.register(Intercom)
@@ -46,3 +50,17 @@ class LineAdmin(admin.ModelAdmin):
 class ExtensionAdmin(admin.ModelAdmin):
     """ Extension model admin tweaks. """
     exclude = ('channel',)
+
+
+@admin.register(CallGroup)
+class CallGroupAdmin(admin.ModelAdmin):
+    """ CallGroup model admin tweaks. """
+    form = CallGroupForm
+    list_display = ('extension',)
+
+
+@admin.register(OutboundCall)
+class OutboundCallAdmin(admin.ModelAdmin):
+    """ OutboundCall model admin tweaks. """
+    form = OutboundCallForm
+    list_display = ('extension', 'phone_number', 'gateway')

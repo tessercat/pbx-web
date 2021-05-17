@@ -1,5 +1,6 @@
 """ Gateway app models module. """
 from django.db import models
+from dialplan.models import Action
 from sofia.models import SofiaProfile
 
 
@@ -22,7 +23,7 @@ class AclAddress(models.Model):
 
     address = models.GenericIPAddressField()
     gateway = models.ForeignKey(
-        'gateway.Gateway',
+        Gateway,
         on_delete=models.CASCADE
     )
 
@@ -37,15 +38,29 @@ class DidNumber(models.Model):
         constraints = [
             models.UniqueConstraint(
                 name='%(app_label)s_%(class)s_is_unique',
-                fields=['number', 'gateway']
+                fields=['phone_number', 'gateway']
             ),
         ]
 
-    number = models.CharField(max_length=50)
+    phone_number = models.CharField(max_length=50)
     gateway = models.ForeignKey(
-        'gateway.Gateway',
+        Gateway,
         on_delete=models.CASCADE
     )
 
     def __str__(self):
-        return f'{self.gateway} - {self.number}'
+        return f'{self.gateway} - {self.phone_number}'
+
+
+class InboundTransfer(Action):
+    """ A transfer Action from Gateway to Extension. """
+    template = 'gateway/transfer.xml'
+
+    did_number = models.OneToOneField(
+        DidNumber,
+        on_delete=models.CASCADE
+    )
+    extension = models.OneToOneField(
+        'intercom.Extension',
+        on_delete=models.CASCADE
+    )

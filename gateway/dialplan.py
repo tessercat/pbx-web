@@ -20,9 +20,7 @@ class GatewayDialplanHandler(DialplanHandler):
             gateway__domain=context
         )
         if hasattr(did_number, 'extension'):
-            extension = did_number.extension
-            if hasattr(extension, 'action'):
-                return extension.action.get_action()
+            return did_number.extension.get_action()
         raise Http404
 
 
