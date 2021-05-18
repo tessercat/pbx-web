@@ -19,6 +19,8 @@ class CommonConfig(AppConfig):
         from django.conf import settings
         from django.utils.module_loading import autodiscover_modules
 
+        logger = logging.getLogger('django.server')
+
         # Autodiscover protected paths configuration.
         autodiscover_modules('protected_paths')
 
@@ -31,9 +33,7 @@ class CommonConfig(AppConfig):
             if fnmatch(filename, css_pattern):
                 common_settings['css'] = filename
                 break
-        logging.getLogger('django.server').info(
-            '%s css %s', self.name, common_settings.get('css')
-        )
+        logger.info('%s css %s', self.name, common_settings.get('css'))
 
         # Open RTP ports.
         if sys.argv[-1] == 'project.asgi:application':
@@ -41,6 +41,12 @@ class CommonConfig(AppConfig):
 
             firewall.accept(
                 'udp',
+                settings.PORTS['rtp_start'],
+                settings.PORTS['rtp_end']
+            )
+            logger.info(
+                '%s opened udp %s-%s',
+                self.name,
                 settings.PORTS['rtp_start'],
                 settings.PORTS['rtp_end']
             )

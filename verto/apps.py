@@ -1,5 +1,4 @@
 """ Verto app config module. """
-import sys
 from django.apps import AppConfig
 
 
@@ -9,8 +8,11 @@ class VertoConfig(AppConfig):
 
     def ready(self):
         """ Configure verto app. """
+        # pylint: disable=import-outside-toplevel
+        import sys
+
         if sys.argv[-1] == 'project.asgi:application':
-            # pylint: disable=import-outside-toplevel
+            import logging
             from django.conf import settings
             from common import firewall
 
@@ -18,4 +20,8 @@ class VertoConfig(AppConfig):
                 'udp',
                 settings.PORTS['stun'],
                 settings.PORTS['stun'],
+            )
+            logging.getLogger('django.server').info(
+                '%s opened udp %s',
+                self.name, settings.PORTS['stun']
             )

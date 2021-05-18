@@ -49,23 +49,3 @@ class DidNumber(models.Model):
 
     def __str__(self):
         return f'{self.gateway} - {self.phone_number}'
-
-
-class GatewayAction(models.Model):
-    """ An intercom Extension dialplan action. """
-    template = None
-
-    extension = models.ForeignKey(
-        'intercom.Extension',
-        on_delete=models.CASCADE,
-    )
-
-
-class InboundTransfer(GatewayAction):
-    """ A transfer from to an intercom Extension. """
-    template = 'gateway/transfer.xml'
-
-    did_number = models.OneToOneField(
-        DidNumber,
-        on_delete=models.CASCADE
-    )

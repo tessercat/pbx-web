@@ -17,7 +17,8 @@ class IntercomConfig(AppConfig):
         import os
         import sys
         from django.conf import settings
-        from intercom.models import IntercomAction
+
+        logger = logging.getLogger('django.server')
 
         # Open port.
         if sys.argv[-1] == 'project.asgi:application':
@@ -30,9 +31,12 @@ class IntercomConfig(AppConfig):
                     intercom.port,
                     intercom.port,
                 )
+                logger.info(
+                    '%s opened tcp %s',
+                    self.name, intercom.port
+                )
 
         # Configure static files.
-        logger = logging.getLogger('django.server')
         static_dir = os.path.join(
             settings.BASE_DIR, self.name, 'static', self.name
         )
@@ -58,11 +62,3 @@ class IntercomConfig(AppConfig):
         logger.info(
             '%s client %s', self.name, intercom_settings.get('client')
         )
-
-        # Configure action_names.
-        action_names = []
-        for subclass in IntercomAction.__subclasses__():
-            action_names.append(subclass._meta.model_name)
-        intercom_settings['action_names'] = action_names
-        for name in action_names:
-            logger.info('%s %s', self.name, name)

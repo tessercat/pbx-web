@@ -31,7 +31,7 @@ class Extension(models.Model):
     name = models.CharField(max_length=15)
     extension_number = models.CharField(max_length=50)
     intercom = models.ForeignKey(
-        Intercom,
+        'intercom.Intercom',
         on_delete=models.CASCADE
     )
     # Validate PCRE can't be web-enabled?
@@ -80,7 +80,9 @@ class GroupCallExtension(IntercomAction):
     """ An extension to call a group of Lines. """
     template = 'intercom/group.xml'
 
-    lines = models.ManyToManyField(Line)
+    lines = models.ManyToManyField(
+        'intercom.Line'
+    )
 
 
 class OutboundCallExtension(IntercomAction):
@@ -122,15 +124,17 @@ class OutboundCallMatcher(models.Model):
 
     name = models.CharField(max_length=15)
     expression = models.CharField(max_length=50)
+    intercom = models.ForeignKey(
+        'intercom.Intercom',
+        on_delete=models.CASCADE
+    )
     caller_id_name = models.CharField(
+        blank=True,  # If blank, send Line name?
         max_length=15
     )
     caller_id_number = models.CharField(
+        # Not blank, but can be overridden by Line?
         max_length=50
-    )
-    intercom = models.ForeignKey(
-        Intercom,
-        on_delete=models.CASCADE
     )
     gateway = models.ForeignKey(
         'gateway.Gateway',
@@ -139,3 +143,20 @@ class OutboundCallMatcher(models.Model):
 
     def __str__(self):
         return f'{self.name} ({self.intercom})'
+
+
+class InboundTransfer(models.Model):
+    """ A transfer to an intercom Extension. """
+    template = 'gateway/transfer.xml'
+
+    did_number = models.OneToOneField(
+        'gateway.DidNumber',
+        on_delete=models.CASCADE
+    )
+    extension = models.ForeignKey(
+        Extension,
+        on_delete=models.CASCADE,
+    )
+
+    def __str__(self):
+        return f'{self.did_number} ({self.extension})'
