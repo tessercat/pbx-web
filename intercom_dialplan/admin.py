@@ -26,7 +26,7 @@ class OutboundCallExtensionAdmin(admin.ModelAdmin):
     """ OutboundCallExtension model admin tweaks. """
     list_display = (
         'extension', 'outbound_number',
-        'caller_id_number', 'caller_id_name',
+        'cid_number', 'cid_name',
         'gateway'
     )
 
@@ -36,7 +36,7 @@ class OutboundCallMatcherAdmin(admin.ModelAdmin):
     """ OutboundCallMatcher model admin tweaks. """
     list_display = (
         'name', 'expression', 'intercom',
-        'caller_id_name', 'caller_id_number',
+        'cid_name', 'cid_number',
         'gateway'
     )
 

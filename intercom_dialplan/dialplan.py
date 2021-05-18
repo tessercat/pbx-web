@@ -4,23 +4,27 @@ from django.db.utils import OperationalError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from dialplan.registries import DialplanHandler, register_dialplan_handler
-from intercom.apps import intercom_settings
-from intercom.models import Intercom
+from intercom.models import Intercom, Line
+from intercom_dialplan.apps import intercom_dialplan_settings
 from intercom_dialplan.models import Extension, OutboundCallMatcher
-from gateway.models import Gateway
 from verto.models import Client
 
 
 class ActionHandler(DialplanHandler):
     """ Handle Line/Client extension action requets. """
 
-    def get_action(self, extension):
+    @staticmethod
+    def get_action(extension):
         """ Return extension action. """
         if hasattr(extension, 'intercomaction'):
-            for name in intercom_settings['action_names']:
+            for name in intercom_dialplan_settings['action_names']:
                 if hasattr(extension.intercomaction, name):
                     return getattr(extension.intercomaction, name)
         raise Http404
+
+    def get_dialplan(self, request, domain):
+        """ Return a template/context. """
+        raise NotImplementedError
 
 
 class LineCallHandler(ActionHandler):
@@ -30,9 +34,8 @@ class LineCallHandler(ActionHandler):
 
     def get_matchers(self):
         """ Return cached matchers or set and send. """
-        if self.matchers:
-            return self.matchers
-        self.matchers = OutboundCallMatcher.objects.all()
+        if not self.matchers:
+            self.matchers = OutboundCallMatcher.objects.all()
         return self.matchers
 
     # Handle 404 with an annotation.
@@ -48,10 +51,7 @@ class LineCallHandler(ActionHandler):
         username = request.POST.get('variable_user_name')
         if not username:
             raise Http404
-        line = get_object_or_404(
-            'intercom.Line',
-            username=username
-        )
+        line = get_object_or_404(Line, username=username)
 
         # Handle action or matcher
         try:
@@ -94,7 +94,8 @@ except OperationalError:
 class ClientCallHandler(ActionHandler):
     """ Client dialplan request handler. """
 
-    def get_client(self, request, context):
+    @staticmethod
+    def get_client(request):
         """ Return the calling Client. """
         client_id = request.POST.get('variable_user_name')
         if not client_id:
@@ -107,10 +108,10 @@ class ClientCallHandler(ActionHandler):
         return get_object_or_404(Client, client_id=client_id)
 
     # Handle 404 with an annotation.
-    def get_dialplan(self, request, context):
+    def get_dialplan(self, request, domain):
         """ Return Client Extension template/context. """
         # pylint: disable=unused-argument
-        client = self.get_client(request, context)
+        client = self.get_client(request)
         if not hasattr(client.channel, 'extension'):
             raise Http404
         extension = client.channel.extension
@@ -121,53 +122,8 @@ class ClientCallHandler(ActionHandler):
             'extension': extension,
             'action': action
         }
-        self.log_rendered(request, template, context)
+        # self.log_rendered(request, template, context)
         return template, context
 
 
 register_dialplan_handler('verto', ClientCallHandler())
-
-
-class GatewayCallHandler(DialplanHandler):
-    """ Gateway inbound call dialplan request handler. """
-
-    # Handle 404 with an annotation.
-    def get_dialplan(self, request, context):
-        """ Return template/context. """
-
-        # Get the DidNumber.
-        number = request.POST.get('Caller-Destination-Number')
-        if not number:
-            raise Http404
-        did_number = get_object_or_404(
-            'gateway.DidNumber',
-            number=number,
-            gateway__domain=context
-        )
-
-        # Get the DidNumber's InboundTransfer
-        transfer = get_object_or_404(
-            'intercom_dialplan.InboundTransfer',
-            did_number=did_number
-        )
-        if hasattr(did_number, 'extension'):
-            return did_number.extension
-        raise Http404
-
-        # Return the template/context.
-        template = transfer.template
-        context = {
-            'context': context,
-            'did_number': did_number,
-            'transfer': transfer
-        }
-        self.log_rendered(request, template, context)
-        return template, context
-
-
-# These fail to load until tables exist.
-try:
-    for _gateway in Gateway.objects.all():
-        register_dialplan_handler(_gateway.domain, GatewayCallHandler())
-except OperationalError:
-    pass

@@ -28,7 +28,7 @@ class Extension(models.Model):
             )
         )
 
-    name = models.CharField(max_length=15)
+    name = models.CharField(max_length=50)
     extension_number = models.CharField(max_length=50)
     intercom = models.ForeignKey(
         'intercom.Intercom',
@@ -78,7 +78,7 @@ class IntercomAction(models.Model):
 
 class GroupCallExtension(IntercomAction):
     """ An extension to call a group of Lines. """
-    template = 'intercom/group.xml'
+    template = 'intercom_dialplan/group.xml'
 
     lines = models.ManyToManyField(
         'intercom.Line'
@@ -87,12 +87,12 @@ class GroupCallExtension(IntercomAction):
 
 class OutboundCallExtension(IntercomAction):
     """ An extension to call a number through a Gateway. """
-    template = 'intercom/outbound.xml'
+    template = 'intercom_dialplan/outbound.xml'
 
-    caller_id_name = models.CharField(
-        max_length=15
+    cid_name = models.CharField(
+        max_length=50
     )
-    caller_id_number = models.CharField(
+    cid_number = models.CharField(
         max_length=50
     )
     outbound_number = models.CharField(
@@ -120,19 +120,19 @@ class OutboundCallMatcher(models.Model):
         """ Return True if the number matches the expression. """
         return number or False
 
-    template = 'intercom/outbound-matcher.xml'
+    template = 'intercom_dialplan/outbound-matcher.xml'
 
-    name = models.CharField(max_length=15)
+    name = models.CharField(max_length=50)
     expression = models.CharField(max_length=50)
     intercom = models.ForeignKey(
         'intercom.Intercom',
         on_delete=models.CASCADE
     )
-    caller_id_name = models.CharField(
+    cid_name = models.CharField(
         blank=True,  # If blank, send Line name?
-        max_length=15
+        max_length=50
     )
-    caller_id_number = models.CharField(
+    cid_number = models.CharField(
         # Not blank, but can be overridden by Line?
         max_length=50
     )
@@ -147,7 +147,7 @@ class OutboundCallMatcher(models.Model):
 
 class InboundTransfer(models.Model):
     """ A transfer to an intercom Extension. """
-    template = 'gateway/transfer.xml'
+    template = 'intercom_dialplan/transfer.xml'
 
     did_number = models.OneToOneField(
         'gateway.DidNumber',

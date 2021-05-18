@@ -2,10 +2,10 @@
 <document type="freeswitch/xml">
   <section name="directory">
     <domain name="verto">
-      <user id="{{ client_id }}">
+      <user id="{{ client.client_id }}">
         <params>
           <param name="jsonrpc-allowed-methods" value="echo,verto.invite,verto.attach"/>
-          <param name="password" value="{{ password }}"/>
+          <param name="password" value="{{ client.password }}"/>
         </params>
       </user>
     </domain>

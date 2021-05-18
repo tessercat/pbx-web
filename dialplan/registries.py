@@ -9,7 +9,7 @@ dialplan_handler_registry = {}
 class DialplanHandler(Handler):
     """ Abstract dialplan handler. """
 
-    def get_dialplan(self, request, context):
+    def get_dialplan(self, request, domain):
         """ Return a template/context. """
         raise NotImplementedError
 
