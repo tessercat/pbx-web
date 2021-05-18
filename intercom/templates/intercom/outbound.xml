@@ -4,8 +4,14 @@
     <context name="{{ context }}">
       <extension name="call">
         <condition regex="all">
-          <regex field="destination_number" expression="^{{ action.number }}$"/>
-          <action application="bridge" data="{rtp_secure_media=true}${sofia_contact({{ action.line.intercom.domain }}/{{ action.line.username }}@{{ action.hostname }}}"/>
+          <regex field="destination_number" expression="^{{ action.extension.extension_number }}$"/>
+          <action application="set" data="initial_callee_id_name={{ action.extension.name }}"/>
+          <action application="set" data="origination_callee_id_name={{ action.extension.name }}"/>
+          <action application="export" data="rtp_secure_media=true"/>
+          <action application="export" data="origination_caller_id_name={{ action.caller_id_name }}"/>
+          <action application="export" data="origination_caller_id_number={{ action.caller_id_number }}"/>
+          <!--action application="info"/-->
+          <action application="bridge" data="sofia/gateway/{{ action.gateway.domain }}/{% firstof action.phone_number action.extension.extension_number %}"/>
         </condition>
       </extension>
     </context>

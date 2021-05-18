@@ -17,6 +17,7 @@ class IntercomConfig(AppConfig):
         import os
         import sys
         from django.conf import settings
+        from intercom.models import IntercomAction
 
         # Open port.
         if sys.argv[-1] == 'project.asgi:application':
@@ -57,3 +58,11 @@ class IntercomConfig(AppConfig):
         logger.info(
             '%s client %s', self.name, intercom_settings.get('client')
         )
+
+        # Configure action_names.
+        action_names = []
+        for subclass in IntercomAction.__subclasses__():
+            action_names.append(subclass._meta.model_name)
+        intercom_settings['action_names'] = action_names
+        for name in action_names:
+            logger.info('%s %s', self.name, name)
