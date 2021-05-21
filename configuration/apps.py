@@ -9,4 +9,4 @@ class ConfigurationConfig(AppConfig):
 
     def ready(self):
         """ Autodiscover handlers in other modules. """
-        autodiscover_modules('configuration')
+        autodiscover_modules(self.name)

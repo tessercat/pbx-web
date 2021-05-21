@@ -1,42 +1,32 @@
 """ Intercom app admin module. """
-from django.conf import settings
 from django.contrib import admin
-from intercom.models import Intercom, Line
+from intercom.models import (
+    Extension, GatewayExtension,
+    Bridge, Line, OutsideLine
+)
 
 
-@admin.register(Intercom)
-class IntercomAdmin(admin.ModelAdmin):
-    """ Intercom model admin tweaks. """
+@admin.register(Extension)
+class ExtensionAdmin(admin.ModelAdmin):
+    """ Extension model admin tweaks. """
+    exclude = ('channel',)
 
-    def uri_repr(self, obj):
-        """ Return profile SIPS URI. """
-        # pylint: disable=no-self-use
-        return f'sips:{settings.PBX_HOSTNAME}:{obj.port}'
 
-    uri_repr.short_description = 'URI'
-    list_display = ('domain', 'uri_repr')
-    ordering = ('pk',)
+@admin.register(GatewayExtension)
+class GatewayExtensionAdmin(admin.ModelAdmin):
+    """ GatewayExtension model admin tweaks. """
 
-    def has_add_permission(self, request):
-        """ Disable add. """
-        return False
 
-    def has_change_permission(self, request, obj=None):
-        """ Disable change. """
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        """ Disable delete. """
-        return False
+@admin.register(Bridge)
+class BridgeAdmin(admin.ModelAdmin):
+    """ Bridge model admin tweaks. """
 
 
 @admin.register(Line)
 class LineAdmin(admin.ModelAdmin):
     """ Line model admin tweaks. """
-    exclude = ('registered',)
-    list_display = (
-        'name',
-        'intercom',
-        'username', 'password',
-        'registered'
-    )
+
+
+@admin.register(OutsideLine)
+class OutsideLineAdmin(admin.ModelAdmin):
+    """ OutsideLine model admin tweaks. """

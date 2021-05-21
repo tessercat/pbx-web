@@ -10,7 +10,7 @@
       <profiles>
         <profile name="verto4">
 
-          <param name="bind-local" value="127.0.0.1:{{ verto_port }}"/>
+          <param name="bind-local" value="127.0.0.1:{{ port }}"/>
           <param name="secure-combined" value="$${certs_dir}/wss.pem"/>
 
           <param name="userauth" value="true"/>
@@ -26,7 +26,7 @@
         </profile>
         <profile name="verto6">
 
-          <param name="bind-local" value="[::1]:{{ verto_port }}"/>
+          <param name="bind-local" value="[::1]:{{ port }}"/>
           <param name="secure-combined" value="$${certs_dir}/wss.pem"/>
 
           <param name="userauth" value="true"/>

@@ -1,21 +1,16 @@
 """ Verto app config request handler module. """
 from django.conf import settings
-from configuration.registries import (
-    ConfigurationHandler,
-    register_configuration_handler
-)
+from configuration.fsapi import ModConfigHandler, register_mod_handler
 
 
-class VertoConfigHandler(ConfigurationHandler):
+class VertoConfigHandler(ModConfigHandler):
     """ Verto config request handler. """
 
-    def process(self, request):
-        """ Return template and context. """
+    def get_config(self, request):
+        """ Return template/context. """
         template = 'verto/verto.conf.xml'
-        context = {
-            'verto_port': settings.PORTS['verto'],
-        }
+        context = {'port': settings.PORTS['verto']}
         return template, context
 
 
-register_configuration_handler('verto.conf', VertoConfigHandler())
+register_mod_handler('verto', VertoConfigHandler())

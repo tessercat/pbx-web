@@ -3,8 +3,7 @@ import ast
 import os
 from django.core.management.base import BaseCommand
 from django.conf import settings
-from intercom.models import Intercom
-from gateway.models import Gateway, AclAddress
+from sofia.models import Intercom, Gateway, AclAddress
 
 
 class Command(BaseCommand):

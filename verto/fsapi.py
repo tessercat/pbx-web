@@ -4,7 +4,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from verto.models import Client
-from fsapi.registries import FsapiHandler, register_fsapi_handler
+from fsapi.views import FsapiHandler, register_fsapi_handler
 
 
 class VertoLoginHandler(FsapiHandler):

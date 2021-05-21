@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <document type="freeswitch/xml">
   <section name="directory">
-    <domain name="{{ domain }}">
-      <user id="{{ user_id }}">
+    <domain name="{{ line.intercom.domain }}">
+      <user id="{{ line.username }}">
         <params>
-          <param name="password" value="{{ password }}" />
+          <param name="password" value="{{ line.password }}" />
         </params>
       </user>
     </domain>

@@ -9,4 +9,4 @@ class DirectoryConfig(AppConfig):
 
     def ready(self):
         """ Autodiscover handlers in other modules. """
-        autodiscover_modules('directory')
+        autodiscover_modules(self.name)

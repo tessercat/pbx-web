@@ -3,7 +3,7 @@ from uuid import UUID
 from django.db.utils import OperationalError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from directory.registries import DirectoryHandler, register_directory_handler
+from directory.fsapi import DirectoryHandler, register_directory_handler
 from intercom.models import Intercom, Line
 from verto.models import Client
 
@@ -22,17 +22,14 @@ class LineAuthHandler(DirectoryHandler):
             raise Http404
 
         # Send the line-auth template.
-        user = request.POST.get('user')
-        if not user:
+        username = request.POST.get('user')
+        if not username:
             raise Http404
         intercom = get_object_or_404(Intercom, domain=domain)
-        line = get_object_or_404(Line, username=user, intercom=intercom)
+        line = get_object_or_404(Line, username=username, intercom=intercom)
         template = 'intercom/line-auth.xml'
-        context = {
-            'domain': domain,
-            'user_id': user,
-            'password': line.password
-        }
+        context = {'line': line}
+        # self.log_rendered(request, template, context)
         return template, context
 
 

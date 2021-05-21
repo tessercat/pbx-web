@@ -1,6 +1,33 @@
-""" Gateway app admin module. """
+""" Intercom app admin module. """
+from django.conf import settings
 from django.contrib import admin
-from gateway.models import Gateway, AclAddress, DidNumber
+from sofia.models import Intercom, Gateway, AclAddress
+
+
+@admin.register(Intercom)
+class IntercomAdmin(admin.ModelAdmin):
+    """ Intercom model admin tweaks. """
+
+    def uri_repr(self, obj):
+        """ Return profile SIPS URI. """
+        # pylint: disable=no-self-use
+        return f'sips:{settings.PBX_HOSTNAME}:{obj.port}'
+
+    uri_repr.short_description = 'URI'
+    list_display = ('domain', 'uri_repr')
+    ordering = ('pk',)
+
+    def has_add_permission(self, request):
+        """ Disable add. """
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        """ Disable change. """
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        """ Disable delete. """
+        return False
 
 
 @admin.register(Gateway)
@@ -38,9 +65,3 @@ class AclAddressAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         """ Disable delete. """
         return False
-
-
-@admin.register(DidNumber)
-class DidNumberAdmin(admin.ModelAdmin):
-    """ DidNumber model admin tweaks. """
-    list_display = ('phone_number', 'gateway')

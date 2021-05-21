@@ -1,8 +1,6 @@
 """ Conference app configuration request handler module. """
 from django.conf import settings
-from configuration.registries import (
-    ConfigurationHandler,
-    register_configuration_handler
+from configuration.fsapi import ModConfigHandler, register_mod_handler
 )
 
 

@@ -1,4 +1,5 @@
 """ Common views module. """
+import logging
 from django.http import (
     HttpResponseBadRequest,
     HttpResponseForbidden,
@@ -6,6 +7,15 @@ from django.http import (
 )
 from django.shortcuts import render
 from common.apps import common_settings
+
+
+protected_paths = []
+
+
+def register_protected_path(path):
+    """ Add paths to the global protected paths registry."""
+    protected_paths.append(path)
+    logging.getLogger('django.server').info('protected %s', path)
 
 
 def custom400(request, exception):

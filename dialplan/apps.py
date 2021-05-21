@@ -1,5 +1,6 @@
 """ Dialplan app config module. """
 from django.apps import AppConfig
+from django.utils.module_loading import autodiscover_modules
 
 
 class DialplanConfig(AppConfig):
@@ -8,7 +9,4 @@ class DialplanConfig(AppConfig):
 
     def ready(self):
         """ Autodiscover handlers in other modules. """
-        # pylint: disable=import-outside-toplevel
-        from django.utils.module_loading import autodiscover_modules
-
-        autodiscover_modules('dialplan')
+        autodiscover_modules(self.name)

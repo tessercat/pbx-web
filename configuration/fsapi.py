@@ -1,10 +1,30 @@
 """ Configuration request handler module. """
+import logging
 from django.http import Http404
-from fsapi.registries import FsapiHandler, register_fsapi_handler
-from configuration.registries import configuration_handler_registry
+from fsapi.views import Handler, FsapiHandler, register_fsapi_handler
 
 
-class ConfigurationHandler(FsapiHandler):
+module_config_handlers = {}
+
+
+def register_mod_handler(module, handler):
+    """ Add a module configuration handler to the registry."""
+    module_config_handlers[module] = handler
+    logging.getLogger('django.server').info(
+        'configuration %s %s',
+        module, handler
+    )
+
+
+class ModConfigHandler(Handler):
+    """ Module configuration handler abstract class. """
+
+    def get_config(self, request):
+        """ Return template/context. """
+        raise NotImplementedError
+
+
+class ConfigSectionHandler(FsapiHandler):
     """ Handler for all configuration requests. """
 
     def __init__(self):
@@ -16,14 +36,13 @@ class ConfigurationHandler(FsapiHandler):
         """ Process configuration request key_value handler. """
         key_value = request.POST.get('key_value')
         if not key_value:
-            self.logger.info('No configuration key found')
-            self.logger.info(request.POST.dict())
             raise Http404
-        handler = configuration_handler_registry.get(key_value)
+        module = key_value.split('.')[0]
+        handler = module_config_handlers.get(module)
         if not handler:
-            self.logger.info('No configuration handler for %s', key_value)
+            self.logger.info('No configuration handler for %s', module)
             raise Http404
-        return handler.process(request)
+        return handler.get_config(request)
 
 
-register_fsapi_handler(ConfigurationHandler())
+register_fsapi_handler(ConfigSectionHandler())

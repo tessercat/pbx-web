@@ -9,4 +9,4 @@ class FsapiConfig(AppConfig):
 
     def ready(self):
         """ Autodiscover registries. """
-        autodiscover_modules('fsapi')
+        autodiscover_modules(self.name)

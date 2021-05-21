@@ -1,10 +1,30 @@
 """ Dialplan request handler module. """
+import logging
 from django.http import Http404
-from fsapi.registries import FsapiHandler, register_fsapi_handler
-from dialplan.registries import dialplan_handler_registry
+from fsapi.views import Handler, FsapiHandler, register_fsapi_handler
 
 
-class DialplanHandler(FsapiHandler):
+dialplan_handlers = {}
+
+
+def register_dialplan_handler(context, handler):
+    """ Add a dialplan handler to the registry."""
+    dialplan_handlers[context] = handler
+    logging.getLogger('django.server').info(
+        'dialplan %s %s',
+        context, handler
+    )
+
+
+class DialplanHandler(Handler):
+    """ Abstract dialplan handler. """
+
+    def get_dialplan(self, request, context):
+        """ Return a template/context. """
+        raise NotImplementedError
+
+
+class DialplanSectionHandler(FsapiHandler):
     """ Handler for all dialplan requests. """
 
     def __init__(self):
@@ -16,14 +36,12 @@ class DialplanHandler(FsapiHandler):
         """ Process request by dialplan context. """
         context = request.POST.get('Caller-Context')
         if not context:
-            self.logger.info('No dialplan context found')
-            self.logger.info(request.POST.dict())
             raise Http404
-        handler = dialplan_handler_registry.get(context)
+        handler = dialplan_handlers.get(context)
         if not handler:
             self.logger.info('No dialplan handler for %s', context)
             raise Http404
         return handler.get_dialplan(request, context)
 
 
-register_fsapi_handler(DialplanHandler())
+register_fsapi_handler(DialplanSectionHandler())
