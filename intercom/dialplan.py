@@ -16,7 +16,7 @@ class LineCallHandler(DialplanHandler):
     """ Line call dialplan request handler. """
 
     # Handle 404 with an annotation.
-    def get_dialplan(self, request, domain):
+    def get_dialplan(self, request, context):
         """ Return Line Extension/Matcher template/context. """
 
         # Get the dialed number.
@@ -33,31 +33,31 @@ class LineCallHandler(DialplanHandler):
         # Handle action or matcher
         try:
             extension = Extension.objects.get(
-                intercom__domain=domain,
+                intercom__domain=context,
                 extension_number=number
             )
-            action = extension.get_action(extension)
+            action = extension.get_action()
             if not action:
                 raise Http404
             template = action.template
-            context = {
+            template_context = {
                 'line': line,
                 'extension': extension,
                 'action': action
             }
-            self.log_rendered(request, template, context)
-            return template, context
+            self.log_rendered(request, template, template_context)
+            return template, template_context
         except Extension.DoesNotExist:
             extensions = GatewayExtension.objects.all()
             for extension in extensions:
                 if extension.matches(number):
                     template = extension.template
-                    context = {
+                    template_context = {
                         'line': line,
                         'extension': extension
                     }
-                    self.log_rendered(request, template, context)
-                    return template, context
+                    self.log_rendered(request, template, template_context)
+                    return template, template_context
 
         # No action and no match.
         raise Http404
@@ -88,7 +88,7 @@ class ClientCallHandler(DialplanHandler):
         return get_object_or_404(Client, client_id=client_id)
 
     # Handle 404 with an annotation.
-    def get_dialplan(self, request, domain):
+    def get_dialplan(self, request, context):
         """ Return Client Extension template/context. """
         # pylint: disable=unused-argument
         client = self.get_client(request)
@@ -99,13 +99,13 @@ class ClientCallHandler(DialplanHandler):
         if not action:
             raise Http404
         template = action.template
-        context = {
+        template_context = {
             'client': client,
             'extension': extension,
             'action': action
         }
-        # self.log_rendered(request, template, context)
-        return template, context
+        # self.log_rendered(request, template, template_context)
+        return template, template_context
 
 
 register_dialplan_handler('verto', ClientCallHandler())
@@ -115,19 +115,19 @@ class GatewayCallHandler(DialplanHandler):
     """ Gateway inbound call dialplan request handler. """
 
     # Handle 404 with an annotation.
-    def get_dialplan(self, request, domain):
+    def get_dialplan(self, request, context):
         """ Return template/context. """
         number = request.POST.get('Caller-Destination-Number')
         if not number:
             raise Http404
-        line = get_object_or_404(
-            OutsideLine,
+        transfer = get_object_or_404(
+            InboundTransfer,
             number=number,
         )
-        template = line.template
-        context = {'line': line}
-        self.log_rendered(request, template, context)
-        return template, context
+        template = transfer.template
+        template_context = {'extension': transfer.extension}
+        self.log_rendered(request, template, template_context)
+        return template, template_context
 
 
 # These fail to load until tables exist.

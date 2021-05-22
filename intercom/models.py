@@ -1,9 +1,8 @@
 """ Intercom app models module. """
-from django.conf import settings
+import logging
 from django.db import models
 from django.db.models import signals
 from django.dispatch import receiver
-from django.utils.html import format_html
 from intercom.apps import intercom_settings
 from sofia.models import Intercom, Gateway
 from verto.models import Channel
@@ -19,16 +18,6 @@ class Extension(models.Model):
                 fields=['extension_number', 'intercom']
             ),
         ]
-
-    def channel_link(self):
-        """ Return a link to the channel. """
-        return format_html(
-            '<a href="https://%s/%s" title="Open the channel">%s</a>' % (
-                settings.PBX_HOSTNAME,
-                self.channel.channel_id,
-                self.channel
-            )
-        )
 
     def get_action(self):
         """ Return the Extension's Action subtype or None. """
@@ -135,6 +124,28 @@ class Bridge(Action):
     """ An Action to call the Lines and OutsideLines that reference it. """
     template = 'intercom/bridge.xml'
 
+    def get_dialstring(self):
+        """ Return the dialstring for the bridge template. """
+        lines = []
+
+        logger = logging.getLogger('django.server')
+        for line in self.line_set.all():
+            logger.info(line)
+
+        dialstring = '[%s,%s]sofia/gateway/%s/%s'
+        cid_name = 'origination_caller_id_name=%s'
+        cid_number = 'origination_caller_id_number=%s'
+        for line in self.outsideline_set.all():
+            lines.append(
+                dialstring % (
+                    cid_name % line.cid_name,
+                    cid_number % line.cid_number,
+                    line.gateway.domain,
+                    line.phone_number
+                )
+            )
+        return ':_:'.join(lines)
+
 
 class Line(models.Model):
     """ A username/password registration for an Intercom profile. Lines are
@@ -177,17 +188,19 @@ class Line(models.Model):
 
 
 class OutsideLine(models.Model):
-    """ An external phone number. Calls to an OutsideLine Bridge dials the
-    external number through the line's Gateway. Gateway dialplan handlers
-    transfer calls to the line's number to the line's transfer Extension. """
-    template = 'intercom/transfer.xml'
+    """ An external phone number and a Gateway. Calls to Bridges that
+    reference an OutsideLine dial the external number through the line's
+    Gateway. """
 
-    name = models.CharField(
-        max_length=50
-    )
     phone_number = models.CharField(
         unique=True,
         max_length=50,
+    )
+    cid_name = models.CharField(
+        max_length=50
+    )
+    cid_number = models.CharField(
+        max_length=50
     )
     gateway = models.ForeignKey(
         Gateway,
@@ -197,6 +210,19 @@ class OutsideLine(models.Model):
         Bridge,
         blank=True,
     )
+
+    def __str__(self):
+        return f'{self.phone_number} ({self.cid_name} {self.cid_number})'
+
+
+class InboundTransfer(models.Model):
+    """ A dialplan action to transfer external calls to an Extension. """
+    template = 'intercom/transfer.xml'
+
+    phone_number = models.CharField(
+        unique=True,
+        max_length=50,
+    )
     transfer_extension = models.ForeignKey(
         Extension,
         blank=True,
@@ -205,4 +231,4 @@ class OutsideLine(models.Model):
     )
 
     def __str__(self):
-        return f'{self.name} ({self.phone_number})'
+        return f'{self.phone_number} {self.transfer_extension}'

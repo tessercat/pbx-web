@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <document type="freeswitch/xml">
   <section name="dialplan">
-    <context name="{{ extension.intercom.domain }}">
+    <context name="{{ extension.gateway.domain }}">
       <extension name="outbound">
         <condition regex="all">
-          <regex field="destination_number" expression="^{{ extension.extension_number }}$"/>
+          <regex field="destination_number" expression="^{{ extension.expression }}$"/>
           <action application="set" data="initial_callee_id_name={{ extension.name }}"/>
           <action application="set" data="origination_callee_id_name={{ extension.name }}"/>
           <action application="export" data="rtp_secure_media=true"/>
-          <action application="export" data="origination_caller_id_name={{ action.cid_name }}"/>
-          <action application="export" data="origination_caller_id_number={{ action.cid_number }}"/>
+          <action application="export" data="origination_caller_id_name={{ extension.cid_name }}"/>
+          <action application="export" data="origination_caller_id_number={{ extension.cid_number }}"/>
           <!--action application="info"/-->
-          <action application="bridge" data="sofia/gateway/{{ action.gateway.domain }}/{% firstof action.outbound_number extension.extension_number %}"/>
+          <action application="bridge" data="sofia/gateway/{{ extension.gateway.domain }}/$1"/>
         </condition>
       </extension>
     </context>
