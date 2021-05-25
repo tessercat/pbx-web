@@ -74,7 +74,8 @@ class Command(BaseCommand):
                     username=data['username'],
                     password=data['password'],
                     proxy=data['proxy'],
-                    realm=data['realm']
+                    realm=data['realm'],
+                    priority=data['priority']
                 )
                 print('Created gateway', gateway, '- reload mod_sofia')
 

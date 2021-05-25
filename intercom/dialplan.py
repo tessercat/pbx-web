@@ -4,11 +4,8 @@ from django.db.utils import OperationalError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from dialplan.fsapi import DialplanHandler, register_dialplan_handler
-from intercom.models import (
-    Intercom, Gateway,
-    Extension, GatewayExtension,
-    Line, OutsideLine
-)
+from sofia.models import Intercom, Gateway
+from intercom.models import Extension, Line, InboundTransfer
 from verto.models import Client
 
 
@@ -43,18 +40,17 @@ class LineCallHandler(DialplanHandler):
             template_context = {
                 'line': line,
                 'extension': extension,
-                'action': action
+                'action': action,
             }
             self.log_rendered(request, template, template_context)
             return template, template_context
         except Extension.DoesNotExist:
-            extensions = GatewayExtension.objects.all()
-            for extension in extensions:
+            for extension in line.outbound_extensions.all():
                 if extension.matches(number):
                     template = extension.template
                     template_context = {
                         'line': line,
-                        'extension': extension
+                        'extension': extension,
                     }
                     self.log_rendered(request, template, template_context)
                     return template, template_context
@@ -102,7 +98,7 @@ class ClientCallHandler(DialplanHandler):
         template_context = {
             'client': client,
             'extension': extension,
-            'action': action
+            'action': action,
         }
         # self.log_rendered(request, template, template_context)
         return template, template_context
@@ -127,6 +123,7 @@ class GatewayCallHandler(DialplanHandler):
         template = transfer.template
         template_context = {'extension': transfer.extension}
         self.log_rendered(request, template, template_context)
+        # Write an error log if this happens (to send admin email).
         return template, template_context
 
 

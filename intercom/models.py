@@ -1,10 +1,9 @@
 """ Intercom app models module. """
-import logging
 from django.db import models
 from django.db.models import signals
 from django.dispatch import receiver
 from intercom.apps import intercom_settings
-from sofia.models import Intercom, Gateway
+from sofia.models import Intercom
 from verto.models import Channel
 
 
@@ -64,17 +63,22 @@ def post_delete_handler(sender, instance, **kwargs):
         instance.channel.delete()
 
 
-class GatewayExtension(models.Model):
-    """ A combined extension/action to call a dialed number matching the
-    extension's expression through the extension's Gateway. """
+class OutboundCallerId(models.Model):
+    """ An outbound calling name/number. """
+    name = models.CharField(
+        max_length=50
+    )
+    phone_number = models.CharField(
+        max_length=50
+    )
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                name='%(app_label)s_%(class)s_is_unique',
-                fields=['expression', 'intercom']
-            ),
-        ]
+    def __str__(self):
+        return f'{self.name} {self.phone_number}'
+
+
+class OutboundExtension(models.Model):
+    """ A combined extension/action to call a dialed number matching the
+    extension's expression through a Gateway. """
 
     def matches(self, number):
         """ Return True if the number matches the expression. """
@@ -84,23 +88,13 @@ class GatewayExtension(models.Model):
 
     name = models.CharField(max_length=50)
     expression = models.CharField(max_length=50)
-    intercom = models.ForeignKey(
-        Intercom,
-        on_delete=models.CASCADE
-    )
-    cid_name = models.CharField(
-        max_length=50
-    )
-    cid_number = models.CharField(
-        max_length=50
-    )
-    gateway = models.ForeignKey(
-        Gateway,
+    default_caller_id = models.ForeignKey(
+        OutboundCallerId,
         on_delete=models.CASCADE
     )
 
     def __str__(self):
-        return f'{self.name} ({self.intercom})'
+        return self.name
 
 
 class Action(models.Model):
@@ -124,39 +118,17 @@ class Bridge(Action):
     """ An Action to call the Lines and OutsideLines that reference it. """
     template = 'intercom/bridge.xml'
 
-    def get_dialstring(self):
-        """ Return the dialstring for the bridge template. """
-        lines = []
-
-        logger = logging.getLogger('django.server')
-        for line in self.line_set.all():
-            logger.info(line)
-
-        dialstring = '[%s,%s]sofia/gateway/%s/%s'
-        cid_name = 'origination_caller_id_name=%s'
-        cid_number = 'origination_caller_id_number=%s'
-        for line in self.outsideline_set.all():
-            lines.append(
-                dialstring % (
-                    cid_name % line.cid_name,
-                    cid_number % line.cid_number,
-                    line.gateway.domain,
-                    line.phone_number
-                )
-            )
-        return ':_:'.join(lines)
-
 
 class Line(models.Model):
     """ A username/password registration for an Intercom profile. Lines are
     able to call any of their Intercom's Extensions, and they are able to call
-    external numbers via their GatewayExtensions. Lines receive calls when
+    external numbers via their OutboundExtensions. Lines receive calls when
     their Bridges are called. """
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                name='per_intercom_unique_username',
+                name='%(app_label)s_%(class)s_is_unique',
                 fields=['username', 'intercom']
             ),
         ]
@@ -174,9 +146,15 @@ class Line(models.Model):
         Bridge,
         blank=True,
     )
-    gateway_extensions = models.ManyToManyField(
-        GatewayExtension,
+    outbound_extensions = models.ManyToManyField(
+        OutboundExtension,
         blank=True,
+    )
+    outbound_caller_id = models.ForeignKey(
+        OutboundCallerId,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE
     )
     registered = models.DateTimeField(
         blank=True,
@@ -188,22 +166,17 @@ class Line(models.Model):
 
 
 class OutsideLine(models.Model):
-    """ An external phone number and a Gateway. Calls to Bridges that
-    reference an OutsideLine dial the external number through the line's
-    Gateway. """
-
+    """ An external phone number. Calls to Bridges that reference an
+    OutsideLine call the phone number through a Gateway. """
+    note = models.CharField(
+        max_length=50,
+    )
     phone_number = models.CharField(
         unique=True,
         max_length=50,
     )
-    cid_name = models.CharField(
-        max_length=50
-    )
-    cid_number = models.CharField(
-        max_length=50
-    )
-    gateway = models.ForeignKey(
-        Gateway,
+    default_caller_id = models.ForeignKey(
+        OutboundCallerId,
         on_delete=models.CASCADE
     )
     bridges = models.ManyToManyField(
@@ -212,7 +185,7 @@ class OutsideLine(models.Model):
     )
 
     def __str__(self):
-        return f'{self.phone_number} ({self.cid_name} {self.cid_number})'
+        return f'{self.note} {self.phone_number}'
 
 
 class InboundTransfer(models.Model):

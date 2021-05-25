@@ -26,6 +26,7 @@ class Gateway(SofiaProfile):
     password = models.CharField(max_length=50)
     proxy = models.CharField(max_length=50)
     realm = models.CharField(max_length=50)
+    priority = models.PositiveSmallIntegerField()
     # JSON params field?
     # Datetime registered field and listen for events?
 

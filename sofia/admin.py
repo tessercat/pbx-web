@@ -34,7 +34,7 @@ class IntercomAdmin(admin.ModelAdmin):
 class GatewayAdmin(admin.ModelAdmin):
     """ Gateway model admin tweaks. """
     exclude = ('password',)
-    list_display = ('domain', 'port')
+    list_display = ('domain', 'port', 'priority')
 
     def has_add_permission(self, request):
         """ Disable add. """
