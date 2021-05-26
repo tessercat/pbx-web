@@ -12,12 +12,22 @@ class IntercomConfig(AppConfig):
 
     def config_action_names(self):
         """ Add action_names to settings. """
+        # pylint: disable=no-self-use
         from intercom.models import Action
 
         action_names = []
         for subclass in Action.__subclasses__():
             action_names.append(subclass._meta.model_name)
         intercom_settings['action_names'] = action_names
+
+    def config_gateways(self):
+        """ Add gateways to settings. """
+        # pylint: disable=no-self-use
+        from sofia.models import Gateway
+
+        intercom_settings['gateways'] = list(
+            Gateway.objects.order_by('priority')
+        )
 
     def config_static(self):
         """ Add static files to settings. """
@@ -47,6 +57,7 @@ class IntercomConfig(AppConfig):
         import logging
 
         self.config_static()
+        self.config_gateways()
         self.config_action_names()
         logger = logging.getLogger('django.server')
         for key, value in intercom_settings.items():

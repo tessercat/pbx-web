@@ -1,4 +1,5 @@
 """ Intercom app models module. """
+import re
 from django.db import models
 from django.db.models import signals
 from django.dispatch import receiver
@@ -77,14 +78,19 @@ class OutboundCallerId(models.Model):
 
 
 class OutboundExtension(models.Model):
-    """ A combined extension/action to call a dialed number matching the
-    extension's expression through a Gateway. """
+    """ A combined extension/action for Lines to call through Gateways. """
 
-    def matches(self, number):
-        """ Return True if the number matches the expression. """
-        return number or False
+    def matches(self, dialed_number):
+        """ Return the matched phone number or False. """
+        match = re.fullmatch(self.expression, dialed_number)
+        if match:
+            groups = match.groups()
+            if groups:
+                return groups[0]
+            return match.string
+        return False
 
-    template = 'intercom/gateway.xml'
+    template = 'intercom/outbound.xml'
 
     name = models.CharField(max_length=50)
     expression = models.CharField(max_length=50)
@@ -186,6 +192,22 @@ class OutsideLine(models.Model):
 
     def __str__(self):
         return f'{self.note} {self.phone_number}'
+
+
+def outbound_dialstring(phone_number, caller_id):
+    """ Return a dialstring that bridges to gateways in priority order. """
+    dialstrings = []
+    dialstring = '[%s,%s]sofia/gateway/%s/%s'
+    for gateway in intercom_settings['gateways']:
+        dialstrings.append(
+            dialstring % (
+                'origination_caller_id_name=%s' % caller_id.name,
+                'origination_caller_id_number=%s' % caller_id.phone_number,
+                gateway.domain,
+                phone_number
+            )
+        )
+    return '|'.join(dialstrings)
 
 
 class InboundTransfer(models.Model):

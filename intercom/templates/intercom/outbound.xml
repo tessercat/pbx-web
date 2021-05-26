@@ -1,15 +1,14 @@
+{% load outbound_extras %}
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <document type="freeswitch/xml">
   <section name="dialplan">
-    <context name="{{ extension.gateway.domain }}">
+    <context name="{{ line.intercom.domain }}">
       <extension name="outbound">
         <condition regex="all">
           <regex field="destination_number" expression="^{{ extension.expression }}$"/>
           <action application="export" data="rtp_secure_media=true"/>
-          <action application="export" data="origination_caller_id_name={{ outbound_caller_id.name }}"/>
-          <action application="export" data="origination_caller_id_number={{ outbound_caller_id.number }}"/>
           <!--action application="info"/-->
-          <action application="bridge" data="sofia/gateway/{{ gateway.domain }}/$1"/>
+          <action application="bridge" data="{% get_dialstring line extension phone_number %}"/>
         </condition>
       </extension>
     </context>

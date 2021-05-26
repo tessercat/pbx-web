@@ -17,8 +17,8 @@ class LineCallHandler(DialplanHandler):
         """ Return Line Extension/Matcher template/context. """
 
         # Get the dialed number.
-        number = request.POST.get('Caller-Destination-Number')
-        if not number:
+        dialed_number = request.POST.get('Caller-Destination-Number')
+        if not dialed_number:
             raise Http404
 
         # Get the calling Line.
@@ -27,11 +27,11 @@ class LineCallHandler(DialplanHandler):
             raise Http404
         line = get_object_or_404(Line, username=username)
 
-        # Handle action or matcher
+        # Try Extensions.
         try:
             extension = Extension.objects.get(
                 intercom__domain=context,
-                extension_number=number
+                extension_number=dialed_number
             )
             action = extension.get_action()
             if not action:
@@ -45,17 +45,34 @@ class LineCallHandler(DialplanHandler):
             self.log_rendered(request, template, template_context)
             return template, template_context
         except Extension.DoesNotExist:
-            for extension in line.outbound_extensions.all():
-                if extension.matches(number):
-                    template = extension.template
-                    template_context = {
-                        'line': line,
-                        'extension': extension,
-                    }
-                    self.log_rendered(request, template, template_context)
-                    return template, template_context
+            pass
 
-        # No action and no match.
+        # Try InboundTransfers.
+        try:
+            transfer = InboundTransfer.objects.get(
+                phone_number=dialed_number,
+            )
+            template = transfer.template
+            template_context = {'transfer': transfer}
+            self.log_rendered(request, template, template_context)
+            return template, template_context
+        except InboundTransfer.DoesNotExist:
+            pass
+
+        # Try OutboundExtensions.
+        for extension in line.outbound_extensions.all():
+            phone_number = extension.matches(dialed_number)
+            if phone_number:
+                template = extension.template
+                template_context = {
+                    'line': line,
+                    'extension': extension,
+                    'phone_number': phone_number
+                }
+                self.log_rendered(request, template, template_context)
+                return template, template_context
+
+        # No Extension, no InboundTransfer and no OutboundExtension.
         raise Http404
 
 
@@ -113,17 +130,17 @@ class GatewayCallHandler(DialplanHandler):
     # Handle 404 with an annotation.
     def get_dialplan(self, request, context):
         """ Return template/context. """
-        number = request.POST.get('Caller-Destination-Number')
-        if not number:
+        dialed_number = request.POST.get('Caller-Destination-Number')
+        if not dialed_number:
             raise Http404
         transfer = get_object_or_404(
             InboundTransfer,
-            number=number,
+            phone_number=dialed_number,
         )
+        # Write an error log on 404 to send admin email.
         template = transfer.template
-        template_context = {'extension': transfer.extension}
+        template_context = {'transfer': transfer}
         self.log_rendered(request, template, template_context)
-        # Write an error log if this happens (to send admin email).
         return template, template_context
 
 
