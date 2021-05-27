@@ -11,11 +11,13 @@
 
           <settings>
 
+            <param name="user-agent-string" value="PBX/$${ version }"/>
+
+            <param name="ext-sip-ip" value="$${local_ip_v4}"/>
             <param name="tls" value="true"/>
             <param name="tls-only" value="true"/>
             <param name="tls-sip-port" value="{{ intercom.port }}"/>
             <param name="tls-version" value="tlsv1.2"/>
-            <param name="ext-sip-ip" value="$${local_ip_v4}"/>
 
             <param name="codec-prefs" value="PCMU"/>
             <param name="disable-transcoding" value="true"/>
@@ -24,7 +26,7 @@
             <param name="rtp-ip" value="$${local_ip_v4}"/>
             <param name="ext-rtp-ip" value="$${local_ip_v4}"/>
             <param name="rtp-timer-name" value="soft"/>
-            <!-- Inbound only? Put rtp_secure_media=true in channel vars for outbound. -->
+            <!-- Channel var rtp_secure_media=true for outbound. -->
             <param name="require-secure-rtp" value="true"/>
 
             <param name="rfc2833-pt" value="101"/>

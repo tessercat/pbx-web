@@ -1,9 +1,8 @@
 """ Intercom app directory request handler module. """
 from uuid import UUID
-from django.db.utils import OperationalError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from directory.fsapi import DirectoryHandler, register_directory_handler
+from directory.fsapi import DirectoryHandler
 from intercom.models import Intercom, Line
 from verto.models import Client
 
@@ -33,14 +32,6 @@ class LineAuthHandler(DirectoryHandler):
         return template, context
 
 
-# These don't load until tables exist.
-try:
-    for _intercom in Intercom.objects.all():
-        register_directory_handler(_intercom.domain, LineAuthHandler())
-except OperationalError:
-    pass
-
-
 class ClientAuthHandler(DirectoryHandler):
     """ Handle a verto channel auth request. """
 
@@ -65,6 +56,3 @@ class ClientAuthHandler(DirectoryHandler):
             # self.log_rendered(request, template, context)
             return template, context
         raise Http404
-
-
-register_directory_handler('verto', ClientAuthHandler())

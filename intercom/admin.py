@@ -19,7 +19,7 @@ class ExtensionAdmin(admin.ModelAdmin):
         # pylint: disable=no-self-use
         action = obj.get_action()
         if action:
-            return obj.get_action().__class__.__name__
+            return '%s %s' % (obj.get_action().__class__.__name__, action.name)
         return None
 
     def channel_link(self, obj):
@@ -85,9 +85,32 @@ class BridgeAdmin(admin.ModelAdmin):
 @admin.register(Line)
 class LineAdmin(admin.ModelAdmin):
     """ Line model admin tweaks. """
-    # Add link to Bridge search?
+
+    def bridges_count(self, obj):
+        """ Return the number of Bridges the Line is in. """
+        # pylint: disable=no-self-use
+        count = obj.bridges.count()
+        if count:
+            return count
+        return None
+
+    def outbound_count(self, obj):
+        """ Return the number of OutboundExtensions a Line has. """
+        # pylint: disable=no-self-use
+        count = obj.outbound_extensions.count()
+        if count:
+            return count
+        return None
+
+    bridges_count.short_description = 'Bridges'
+    outbound_count.short_description = 'Outbound'
+
     exclude = ('registered',)
-    list_display = ('name', 'username', 'password', 'intercom', 'registered')
+    list_display = (
+        'name', 'intercom', 'bridges_count',
+        'outbound_count', 'outbound_caller_id',
+        'registered'
+    )
     search_fields = ['bridges__pk__exact']
 
 
@@ -100,8 +123,21 @@ class OutboundCallerIdAdmin(admin.ModelAdmin):
 @admin.register(OutsideLine)
 class OutsideLineAdmin(admin.ModelAdmin):
     """ OutsideLine model admin tweaks. """
-    # Add link to Bridge search?
-    list_display = ('note', 'phone_number', 'default_caller_id')
+
+    def bridges_count(self, obj):
+        """ Return the number of Bridges the Line is in. """
+        # pylint: disable=no-self-use
+        count = obj.bridges.count()
+        if count:
+            return count
+        return None
+
+    bridges_count.short_description = 'Bridges'
+    list_display = (
+        'note', 'phone_number',
+        'bridges_count',
+        'default_caller_id'
+    )
     search_fields = ['bridges__pk__exact']
 
 

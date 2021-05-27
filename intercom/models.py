@@ -126,21 +126,14 @@ class Bridge(Action):
 
 
 class Line(models.Model):
-    """ A username/password registration for an Intercom profile. Lines are
-    able to call any of their Intercom's Extensions, and they are able to call
-    external numbers via their OutboundExtensions. Lines receive calls when
-    their Bridges are called. """
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                name='%(app_label)s_%(class)s_is_unique',
-                fields=['username', 'intercom']
-            ),
-        ]
+    """ A unique username/password registration for the host domain. Lines are
+    able to call any of their intercom's Extensions. Lines call extensions of
+    other intercoms via InboundTransfers, and they call external numbers via
+    OutboundExtensions. Lines receive calls when their Bridges are called. """
 
     name = models.CharField(max_length=15)
     username = models.SlugField(
+        unique=True,
         max_length=50,
     )
     password = models.CharField(max_length=50)
@@ -192,22 +185,6 @@ class OutsideLine(models.Model):
 
     def __str__(self):
         return f'{self.note} {self.phone_number}'
-
-
-def outbound_dialstring(phone_number, caller_id):
-    """ Return a dialstring that bridges to gateways in priority order. """
-    dialstrings = []
-    dialstring = '[%s,%s]sofia/gateway/%s/%s'
-    for gateway in intercom_settings['gateways']:
-        dialstrings.append(
-            dialstring % (
-                'origination_caller_id_name=%s' % caller_id.name,
-                'origination_caller_id_number=%s' % caller_id.phone_number,
-                gateway.domain,
-                phone_number
-            )
-        )
-    return '|'.join(dialstrings)
 
 
 class InboundTransfer(models.Model):

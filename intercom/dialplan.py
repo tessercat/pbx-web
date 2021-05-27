@@ -1,12 +1,33 @@
 """ Intercom dialplan app dialplan request handler module. """
 from uuid import UUID
-from django.db.utils import OperationalError
+from django.conf import settings
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from dialplan.fsapi import DialplanHandler, register_dialplan_handler
-from sofia.models import Intercom, Gateway
+from dialplan.fsapi import DialplanHandler
+from intercom.apps import intercom_settings
 from intercom.models import Extension, Line, InboundTransfer
 from verto.models import Client
+
+
+def line_dialstring(line):
+    """ Return a dialstring that bridges to an intercom Line. """
+    return '${sofia_contact(%s@%s)}' % (line.username, settings.PBX_HOSTNAME)
+
+
+def outbound_dialstring(phone_number, caller_id):
+    """ Return a dialstring that bridges to gateways in priority order. """
+    dialstrings = []
+    dialstring = '[%s,%s]sofia/gateway/%s/%s'
+    for gateway in intercom_settings['gateways']:
+        dialstrings.append(
+            dialstring % (
+                'origination_caller_id_name=%s' % caller_id.name,
+                'origination_caller_id_number=%s' % caller_id.phone_number,
+                gateway.domain,
+                phone_number
+            )
+        )
+    return '|'.join(dialstrings)
 
 
 class LineCallHandler(DialplanHandler):
@@ -76,14 +97,6 @@ class LineCallHandler(DialplanHandler):
         raise Http404
 
 
-# These fail to load until tables exist.
-try:
-    for _intercom in Intercom.objects.all():
-        register_dialplan_handler(_intercom.domain, LineCallHandler())
-except OperationalError:
-    pass
-
-
 class ClientCallHandler(DialplanHandler):
     """ Client dialplan request handler. """
 
@@ -121,9 +134,6 @@ class ClientCallHandler(DialplanHandler):
         return template, template_context
 
 
-register_dialplan_handler('verto', ClientCallHandler())
-
-
 class GatewayCallHandler(DialplanHandler):
     """ Gateway inbound call dialplan request handler. """
 
@@ -142,11 +152,3 @@ class GatewayCallHandler(DialplanHandler):
         template_context = {'transfer': transfer}
         self.log_rendered(request, template, template_context)
         return template, template_context
-
-
-# These fail to load until tables exist.
-try:
-    for _gateway in Gateway.objects.all():
-        register_dialplan_handler(_gateway.domain, GatewayCallHandler())
-except OperationalError:
-    pass

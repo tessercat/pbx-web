@@ -21,6 +21,8 @@
 
   <settings>
 
+    <param name="user-agent-string" value="PBX/$${version}"/>
+
     <param name="ext-sip-ip" value="$${local_ip_v4}"/>
     <param name="tls" value="true"/>
     <param name="tls-only" value="true"/>

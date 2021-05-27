@@ -1,7 +1,6 @@
 """ Intercom app template tags module. """
-import logging
 from django import template
-from intercom.models import outbound_dialstring
+from intercom.dialplan import line_dialstring, outbound_dialstring
 
 
 register = template.Library()
@@ -13,9 +12,9 @@ def get_dialstring(calling_line, bridge):
     dialstrings = []
 
     # Append Lines to the array.
-    logger = logging.getLogger('django.server')
     for line in bridge.line_set.all():
-        logger.info(line)
+        if line != calling_line:
+            dialstrings.append(line_dialstring(line))
 
     # Append OutsideLines to the array.
     for line in bridge.outsideline_set.all():

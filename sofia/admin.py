@@ -35,6 +35,7 @@ class GatewayAdmin(admin.ModelAdmin):
     """ Gateway model admin tweaks. """
     exclude = ('password',)
     list_display = ('domain', 'port', 'priority')
+    ordering = ('priority',)
 
     def has_add_permission(self, request):
         """ Disable add. """

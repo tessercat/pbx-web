@@ -1,6 +1,6 @@
 """ Intercom app outbound template tags module. """
 from django import template
-from intercom.models import outbound_dialstring
+from intercom.dialplan import outbound_dialstring
 
 
 register = template.Library()
