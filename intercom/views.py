@@ -32,11 +32,13 @@ class ClientView(DetailView):
     def get_context_data(self, **kwargs):
         """ Insert data into template context. """
         context = super().get_context_data(**kwargs)
-        if hasattr(self.object, 'extension'):
-            extension = self.object.extension
-        else:
+        if not hasattr(self.object, 'extension'):
             raise Http404
-        context['title'] = extension.name
+        extension = self.object.extension
+        action = extension.get_action()
+        if not action:
+            raise Http404
+        context['title'] = 'Call %s' % action.name
         context['stun_port'] = settings.PORTS['stun']
         context['css'] = intercom_settings.get('css')
         context['adapter'] = intercom_settings.get('adapter')

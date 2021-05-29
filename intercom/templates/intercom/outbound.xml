@@ -2,13 +2,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <document type="freeswitch/xml">
   <section name="dialplan">
-    <context name="{{ line.intercom.domain }}">
+    <context name="{{ context }}">
       <extension name="outbound">
         <condition regex="all">
           <regex field="destination_number" expression="^{{ extension.expression }}$"/>
           <action application="export" data="rtp_secure_media=true"/>
           <!--action application="info"/-->
-          <action application="bridge" data="{% get_dialstring line extension phone_number %}"/>
+          <action application="bridge" data="{% get_dialstring caller extension dest_number %}"/>
         </condition>
       </extension>
     </context>

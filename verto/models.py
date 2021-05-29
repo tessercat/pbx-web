@@ -10,8 +10,6 @@ class Channel(models.Model):
         default=uuid.uuid4,
         editable=False,
     )
-    # channel.action
-    # channel.client_set;
 
     def __str__(self):
         """ A shortened channel ID. """
@@ -30,7 +28,7 @@ class Client(models.Model):
         editable=False,
     )
     channel = models.ForeignKey(
-        'verto.Channel',
+        Channel,
         on_delete=models.CASCADE,
     )
     session_id = models.UUIDField(

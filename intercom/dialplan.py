@@ -1,6 +1,5 @@
 """ Intercom dialplan app dialplan request handler module. """
 from uuid import UUID
-from django.conf import settings
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from dialplan.fsapi import DialplanHandler
@@ -9,22 +8,17 @@ from intercom.models import Extension, Line, InboundTransfer
 from verto.models import Client
 
 
-def line_dialstring(line):
-    """ Return a dialstring that bridges to an intercom Line. """
-    return '${sofia_contact(%s@%s)}' % (line.username, settings.PBX_HOSTNAME)
-
-
-def outbound_dialstring(phone_number, caller_id):
+def outbound_dialstring(dest_number, cid_name, cid_number):
     """ Return a dialstring that bridges to gateways in priority order. """
     dialstrings = []
     dialstring = '[%s,%s]sofia/gateway/%s/%s'
     for gateway in intercom_settings['gateways']:
         dialstrings.append(
             dialstring % (
-                'origination_caller_id_name=%s' % caller_id.name,
-                'origination_caller_id_number=%s' % caller_id.phone_number,
+                'origination_caller_id_name=%s' % cid_name,
+                'origination_caller_id_number=%s' % cid_number,
                 gateway.domain,
-                phone_number
+                dest_number
             )
         )
     return '|'.join(dialstrings)
@@ -42,7 +36,7 @@ class LineCallHandler(DialplanHandler):
         if not dialed_number:
             raise Http404
 
-        # Get the calling Line.
+        # Get the calliggg Line.
         username = request.POST.get('variable_user_name')
         if not username:
             raise Http404
@@ -59,7 +53,8 @@ class LineCallHandler(DialplanHandler):
                 raise Http404
             template = action.template
             template_context = {
-                'line': line,
+                'context': context,
+                'caller': line,
                 'extension': extension,
                 'action': action,
             }
@@ -82,13 +77,14 @@ class LineCallHandler(DialplanHandler):
 
         # Try OutboundExtensions.
         for extension in line.outbound_extensions.all():
-            phone_number = extension.matches(dialed_number)
-            if phone_number:
+            dest_number = extension.matches(dialed_number)
+            if dest_number:
                 template = extension.template
                 template_context = {
-                    'line': line,
+                    'context': context,
+                    'caller': line,
                     'extension': extension,
-                    'phone_number': phone_number
+                    'dest_number': dest_number
                 }
                 self.log_rendered(request, template, template_context)
                 return template, template_context
@@ -110,7 +106,6 @@ class ClientCallHandler(DialplanHandler):
             UUID(client_id, version=4)
         except (ValueError) as err:
             raise Http404 from err
-        # Validate that the client session has not expired?
         return get_object_or_404(Client, client_id=client_id)
 
     # Handle 404 with an annotation.
@@ -121,21 +116,22 @@ class ClientCallHandler(DialplanHandler):
         if not hasattr(client.channel, 'extension'):
             raise Http404
         extension = client.channel.extension
-        action = extension.get_action(extension)
+        action = extension.get_action()
         if not action:
             raise Http404
         template = action.template
         template_context = {
-            'client': client,
+            'context': context,
+            'caller': client,
             'extension': extension,
             'action': action,
         }
-        # self.log_rendered(request, template, template_context)
+        self.log_rendered(request, template, template_context)
         return template, template_context
 
 
-class GatewayCallHandler(DialplanHandler):
-    """ Gateway inbound call dialplan request handler. """
+class InboundCallHandler(DialplanHandler):
+    """ Inbound call dialplan request handler. """
 
     # Handle 404 with an annotation.
     def get_dialplan(self, request, context):

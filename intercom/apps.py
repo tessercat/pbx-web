@@ -28,7 +28,7 @@ class IntercomConfig(AppConfig):
         from intercom.dialplan import (
             ClientCallHandler,
             LineCallHandler,
-            GatewayCallHandler
+            InboundCallHandler
         )
         from sofia.models import Intercom, Gateway
 
@@ -36,7 +36,7 @@ class IntercomConfig(AppConfig):
         for intercom in Intercom.objects.all():
             register_dialplan_handler(intercom.domain, LineCallHandler())
         for gateway in Gateway.objects.all():
-            register_dialplan_handler(gateway.domain, GatewayCallHandler())
+            register_dialplan_handler(gateway.domain, InboundCallHandler())
 
     def config_directory_handlers(self):
         """ Configure directory handlers. """
