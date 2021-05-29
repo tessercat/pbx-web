@@ -36,13 +36,14 @@ class ExtensionAdmin(admin.ModelAdmin):
         return None
 
     action_repr.short_description = 'Action'
-    channel_link.short_description = 'Channel'
+    channel_link.short_description = 'Web'
 
     exclude = ('channel',)
     list_display = (
         'extension_number',
         'intercom',
         'channel_link',
+        'public',
         'action_repr'
     )
 

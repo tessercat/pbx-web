@@ -7,8 +7,10 @@
 
 {% block content %}
     <main class="padded">
+      {% for extension in extensions %}
       <p class="error">
-      Hi
+      <a href="/{{ extension.channel.channel_id }}" title="Call {{ extension.action.name }}">{{ extension.action.name }}</a>
       </p>
+      {% endfor %}
     </main>
 {% endblock %}

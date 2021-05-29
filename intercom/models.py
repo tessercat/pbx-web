@@ -34,6 +34,7 @@ class Extension(models.Model):
         on_delete=models.CASCADE
     )
     web_enabled = models.BooleanField(default=False)
+    public = models.BooleanField(default=False)
     channel = models.OneToOneField(
         Channel,
         blank=True,

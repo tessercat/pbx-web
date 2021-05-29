@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import DetailView, BaseDetailView
 from intercom.apps import intercom_settings
+from intercom.models import Extension
 from verto.models import Channel, Client
 
 
@@ -17,8 +18,13 @@ class IndexView(TemplateView):
     def get_context_data(self, **kwargs):
         """ Insert data into template context. """
         context = super().get_context_data(**kwargs)
-        context['title'] = settings.PBX_HOSTNAME
+        context['title'] = 'Directory'
         context['css'] = intercom_settings.get('css')
+        context['extensions'] = Extension.objects.filter(
+            public=True,
+            channel__isnull=False,
+            action__isnull=False
+        )
         return context
 
 
