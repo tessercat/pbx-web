@@ -8,7 +8,7 @@ from intercom.models import Extension, Line, InboundTransfer
 from verto.models import Client
 
 
-def outbound_dialstring(dest_number, cid_name, cid_number):
+def outbound_dialstring(bridge_number, cid_name, cid_number):
     """ Return a dialstring that bridges to gateways in priority order. """
     dialstrings = []
     dialstring = '[%s,%s]sofia/gateway/%s/%s'
@@ -18,7 +18,7 @@ def outbound_dialstring(dest_number, cid_name, cid_number):
                 'origination_caller_id_name=%s' % cid_name,
                 'origination_caller_id_number=%s' % cid_number,
                 gateway.domain,
-                dest_number
+                bridge_number
             )
         )
     return '|'.join(dialstrings)
@@ -77,14 +77,14 @@ class LineCallHandler(DialplanHandler):
 
         # Try OutboundExtensions.
         for extension in line.outbound_extensions.all():
-            dest_number = extension.matches(dialed_number)
-            if dest_number:
+            bridge_number = extension.matches(dialed_number)
+            if bridge_number:
                 template = extension.template
                 template_context = {
                     'context': context,
                     'caller': line,
                     'extension': extension,
-                    'dest_number': dest_number
+                    'bridge_number': bridge_number
                 }
                 self.log_rendered(request, template, template_context)
                 return template, template_context
@@ -136,15 +136,17 @@ class InboundCallHandler(DialplanHandler):
     # Handle 404 with an annotation.
     def get_dialplan(self, request, context):
         """ Return template/context. """
-        dialed_number = request.POST.get('Caller-Destination-Number')
-        if not dialed_number:
+        did_number = request.POST.get('Caller-Destination-Number')
+        if not did_number:
             raise Http404
-        transfer = get_object_or_404(
-            InboundTransfer,
-            phone_number=dialed_number,
-        )
-        # Write an error log on 404 to send admin email.
+        try:
+            transfer = InboundTransfer.objects.get(phone_number=did_number)
+        except InboundTransfer.DoesNotExist:
+            pass  # Write an error log / admin email.
         template = transfer.template
-        template_context = {'transfer': transfer}
+        template_context = {
+            'did_number': did_number,
+            'transfer': transfer
+        }
         self.log_rendered(request, template, template_context)
         return template, template_context

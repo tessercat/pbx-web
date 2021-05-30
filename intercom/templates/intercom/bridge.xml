@@ -6,7 +6,8 @@
       <extension name="bridge">
         <condition regex="all">
           <regex field="destination_number" expression="^{% get_extension caller extension %}$"/>
-          <action application="export" data="rtp_secure_media=true"/>
+          <action application="set" data="inherit_codec=true"/>
+          <action application="export" data="_nolocal_rtp_secure_media=true"/>
           <!--action application="info"/-->
           <action application="bridge" data="{% get_dialstring caller action %}"/>
         </condition>

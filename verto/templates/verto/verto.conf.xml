@@ -35,7 +35,7 @@
 
           <param name="rtp-ip" value="$${local_ip_v6}"/>
           <param name="inbound-codec-string" value="PCMU"/>
-          <param name="outbound-codec-string" value="OPUS,PCMU,VP8,VP9,H264"/>
+          <param name="outbound-codec-string" value="PCMU"/>
 
           <param name="context" value="verto"/>
 

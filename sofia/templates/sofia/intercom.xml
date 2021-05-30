@@ -20,7 +20,6 @@
             <param name="tls-version" value="tlsv1.2"/>
 
             <param name="codec-prefs" value="PCMU"/>
-            <param name="disable-transcoding" value="true"/>
             <param name="inbound-late-negotiation" value="true"/>
 
             <param name="rtp-ip" value="$${local_ip_v4}"/>

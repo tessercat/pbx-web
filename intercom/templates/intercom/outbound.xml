@@ -6,9 +6,10 @@
       <extension name="outbound">
         <condition regex="all">
           <regex field="destination_number" expression="^{{ extension.expression }}$"/>
-          <action application="export" data="rtp_secure_media=true"/>
+          <action application="set" data="inherit_codec=true"/>
+          <action application="export" data="_nolocal_rtp_secure_media=true"/>
           <!--action application="info"/-->
-          <action application="bridge" data="{% get_dialstring caller extension dest_number %}"/>
+          <action application="bridge" data="{% get_dialstring caller extension bridge_number %}"/>
         </condition>
       </extension>
     </context>

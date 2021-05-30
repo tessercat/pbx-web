@@ -31,7 +31,6 @@
 
     <param name="codec-prefs" value="PCMU"/>
     <param name="inbound-late-negotiation" value="true"/>
-    <param name="disable-transcoding" value="true"/>
 
     <param name="ext-rtp-ip" value="$${local_ip_v4}"/>
     <param name="rtp-timer-name" value="soft"/>
