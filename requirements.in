@@ -3,3 +3,6 @@ daphne
 django-prometheus
 httpx
 markdown
+flake8
+pylint
+pylint-django

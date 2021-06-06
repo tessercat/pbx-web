@@ -36,7 +36,7 @@ class LineCallHandler(DialplanHandler):
         if not dialed_number:
             raise Http404
 
-        # Get the calliggg Line.
+        # Get the calling Line.
         username = request.POST.get('variable_user_name')
         if not username:
             raise Http404
