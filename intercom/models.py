@@ -18,6 +18,8 @@ class Extension(models.Model):
                 fields=['extension_number', 'intercom']
             ),
         ]
+        verbose_name = 'Intercom extension'
+        verbose_name_plural = 'Intercom extensions'
 
     def get_action(self):
         """ Return the Extension's Action subtype or None. """
@@ -125,12 +127,20 @@ class Bridge(Action):
     """ An Action to call the Lines and OutsideLines that reference it. """
     template = 'intercom/bridge.xml'
 
+    class Meta:
+        verbose_name = 'Line bridge'
+        verbose_name_plural = 'Line bridges'
+
 
 class Line(models.Model):
     """ A unique username/password registration for the host domain. Lines are
     able to call any of their intercom's Extensions. Lines call extensions of
     other intercoms via InboundTransfers, and they call external numbers via
     OutboundExtensions. Lines receive calls when their Bridges are called. """
+
+    class Meta:
+        verbose_name = 'Intercom line'
+        verbose_name_plural = 'Intercom lines'
 
     name = models.CharField(max_length=15)
     username = models.SlugField(
